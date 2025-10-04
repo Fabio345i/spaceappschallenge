@@ -14,9 +14,11 @@ async def connect_db():
     global client, db
     client = AsyncIOMotorClient(MONGO_URI)
     db = client[MONGO_DB_NAME]
-    print("✅ Connected to MongoDB")
+    dbs = await client.list_database_names()
+    print("✅ MongoDB connected. Databases found:", dbs)
 
 async def disconnect_db():
     global client
     client.close()
-    print("❌ Disconnected from MongoDB")
+    print("❌ MongoDB disconnected.")
+

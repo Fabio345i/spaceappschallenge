@@ -9,10 +9,6 @@ app = FastAPI()
 def read_root():
     return {"message": "Hello, FastAPI!"}
 
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: str | None = None):
-    return {"item_id": item_id, "q": q}
-
 # Include routers
 app.include_router(register_router.router, prefix="/register", tags=["Login"])
 app.include_router(login_router.router, prefix="/login", tags=["Login"])

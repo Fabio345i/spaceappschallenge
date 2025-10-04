@@ -1,56 +1,84 @@
 <script setup>
-import { RouterView, RouterLink } from 'vue-router'
+import { RouterLink, RouterView } from 'vue-router'
+
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-gray-100">
-    
-    <!-- NAVBAR -->
-    <header class="flex justify-between items-center px-8 py-4 border-b border-white/10 bg-white/5 backdrop-blur-md shadow-lg">
-      <h1 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-400">
-        🌌 NASA Météo
-      </h1>
+  <header>
 
-      <nav class="flex gap-6 text-sm font-medium">
-        <RouterLink 
-          to="/" 
-          class="transition text-gray-300 hover:text-sky-400"
-          active-class="text-sky-400 font-semibold"
-        >
-          Accueil
-        </RouterLink>
+    <div class="wrapper">
+      <HelloWorld msg="You did it!" />
 
-        <RouterLink 
-          to="/about" 
-          class="transition text-gray-300 hover:text-indigo-400"
-          active-class="text-indigo-400 font-semibold"
-        >
-          À propos
-        </RouterLink>
+      <nav>
+        <RouterLink to="/">Home</RouterLink>
+        <RouterLink to="/about">About</RouterLink>
       </nav>
-    </header>
+    </div>
+  </header>
 
-    <!-- PAGE CONTENT -->
-    <main class="flex-1 p-6">
-      <transition name="fade" mode="out-in">
-        <RouterView />
-      </transition>
-    </main>
-
-    <!-- FOOTER -->
-    <footer class="text-center text-gray-500 text-sm py-4 border-t border-white/10 bg-white/5 backdrop-blur-md">
-      Données fournies par 
-      <span class="text-sky-400">NASA GES DISC</span> & 
-      <span class="text-indigo-400">Open-Meteo API</span>.
-    </footer>
-  </div>
+  <RouterView />
 </template>
 
 <style scoped>
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.5s ease;
+header {
+  line-height: 1.5;
+  max-height: 100vh;
 }
-.fade-enter-from, .fade-leave-to {
-  opacity: 0;
+
+.logo {
+  display: block;
+  margin: 0 auto 2rem;
+}
+
+nav {
+  width: 100%;
+  font-size: 12px;
+  text-align: center;
+  margin-top: 2rem;
+}
+
+nav a.router-link-exact-active {
+  color: var(--color-text);
+}
+
+nav a.router-link-exact-active:hover {
+  background-color: transparent;
+}
+
+nav a {
+  display: inline-block;
+  padding: 0 1rem;
+  border-left: 1px solid var(--color-border);
+}
+
+nav a:first-of-type {
+  border: 0;
+}
+
+@media (min-width: 1024px) {
+  header {
+    display: flex;
+    place-items: center;
+    padding-right: calc(var(--section-gap) / 2);
+  }
+
+  .logo {
+    margin: 0 2rem 0 0;
+  }
+
+  header .wrapper {
+    display: flex;
+    place-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  nav {
+    text-align: left;
+    margin-left: -1rem;
+    font-size: 1rem;
+
+    padding: 1rem 0;
+    margin-top: 1rem;
+  }
 }
 </style>

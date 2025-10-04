@@ -30,7 +30,7 @@ function selectPlace(place) {
       ? 'W'
       : 'N'
 
-  emit('location-selected', { lat, lon, geojson: polygon, osm_id: prefix + osmId })
+  emit('location-selected', { lat, lon, geojson: polygon, osm_id: prefix + osmId , city: query.value })
   query.value = place.display_name
   suggestions.value = []
 }

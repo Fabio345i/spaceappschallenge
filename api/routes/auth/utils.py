@@ -8,6 +8,9 @@ load_dotenv()
 secret_key = os.getenv("SECRET_KEY")
 algorithm = os.getenv("ALGORITHM")
 
+if not secret_key or not algorithm:
+    raise RuntimeError("SECRET_KEY or ALGORITHM not set in environment")
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 SECRET_KEY = secret_key

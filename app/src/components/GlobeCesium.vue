@@ -63,6 +63,7 @@ watch(
     if (!val || !viewer) return
 
     if (cityDataSource) {
+      console.log(cityDataSource);
       viewer.dataSources.remove(cityDataSource, true)
       cityDataSource = null
     }

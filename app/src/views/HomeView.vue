@@ -21,8 +21,6 @@ function selectFavorite(fav) {
   favoritesOpen.value = false
 }
 
-
-
 const selectedDate = ref(new Date())
 
 function handleDateSelected(date) {

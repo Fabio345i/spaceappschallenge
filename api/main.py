@@ -1,4 +1,7 @@
 from fastapi import FastAPI
+from routes.auth.login import router as login_router
+from routes.auth.register import router as register_router
+from routes.algo import router as algo_router
 
 app = FastAPI()
 
@@ -9,3 +12,8 @@ def read_root():
 @app.get("/items/{item_id}")
 def read_item(item_id: int, q: str | None = None):
     return {"item_id": item_id, "q": q}
+
+# Include routers
+app.include_router(register_router.router, prefix="/register", tags=["Login"])
+app.include_router(login_router.router, prefix="/login", tags=["Login"])
+app.include_router(algo_router.router, prefix="/algo", tags=["Algo"])

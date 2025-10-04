@@ -1,7 +1,9 @@
 version: "3.9"
+
 services:
   api:
-    build: ./api
+    image: yourusername/backend:latest
+    container_name: backend
     ports:
       - "8000:8000"
     environment:
@@ -9,7 +11,8 @@ services:
     restart: always
 
   app:
-    build: ./app
+    image: yourusername/frontend:latest
+    container_name: frontend
     ports:
       - "80:80"
     restart: always

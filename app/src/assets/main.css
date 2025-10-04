@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme {
+  --color-sky: #38bdf8;
+  --color-indigo: #6366f1;
+  --color-slate-900: #0f172a;
+}
+
+/* Optionnel : styles globaux */
+body {
+  background: linear-gradient(to bottom right, var(--color-slate-900), #1e293b);
+  color: white;
+  font-family: system-ui, sans-serif;
+  min-height: 100vh;
+}

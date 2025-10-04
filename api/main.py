@@ -22,4 +22,4 @@ def read_root():
 app.include_router(register_router, prefix="/register", tags=["Login"])
 app.include_router(login_router, prefix="/login", tags=["Login"])
 app.include_router(algo_router, prefix="/algo", tags=["Algo"])
-app.include_router(rainfall.router)
+app.include_router(rainfall.router, prefix="/weather", tags=["Weather"])

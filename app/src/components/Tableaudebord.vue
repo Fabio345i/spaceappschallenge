@@ -1,74 +1,63 @@
 <template>
-  <div
-    class="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-lg transition-all duration-300 hover:shadow-sky-500/20"
-  >
-    <!-- HEADER -->
-    <header class="text-center mb-6 animate-fade-in">
-      <h1
-        class="text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-indigo-400 to-violet-500 drop-shadow-lg"
-      >
-        🌌 Données Météo
+  <div class="w-full bg-gray-900/90 backdrop-blur-sm border border-gray-800 rounded-lg p-6 shadow-2xl">
+    <header class="text-center mb-6">
+      <h1 class="text-2xl font-semibold text-white mb-2">
+        Weather Data
       </h1>
-      <p class="text-gray-400 text-sm mt-2">
-        Analyse atmosphérique intelligente — Données satellites
-        <span class="text-sky-400 font-medium">NASA</span>
+      <p class="text-gray-400 text-sm">
+        Atmospheric Analysis • NASA Satellites
       </p>
     </header>
 
-    <!-- TABLEAU DE DONNÉES -->
     <transition name="fade">
-      <div v-if="dataLoaded" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <!-- Affichage du lieu sélectionné -->
-        <div class="sm:col-span-2 text-center mb-4">
-          <h2 class="text-xl font-semibold text-sky-400">
-            Lieu sélectionné : {{ props.location?.geojson?.properties?.display_name || 'Coordonnées reçues' }}
+      <div v-if="dataLoaded" class="space-y-4">
+        <div class="text-center mb-6 pb-4 border-b border-gray-800">
+          <h2 class="text-base font-medium text-white mb-1">
+            {{ displayName }}
           </h2>
           <p class="text-gray-500 text-xs">
-            Coordonnées : {{ props.location?.lat.toFixed(4) }} / {{ props.location?.lon.toFixed(4) }}
+            {{ props.location?.lat.toFixed(4) }}° / {{ props.location?.lon.toFixed(4) }}°
           </p>
         </div>
 
-        <div
-          v-for="(item, i) in weatherData"
-          :key="i"
-          class="bg-white/10 border border-white/20 rounded-xl p-4 flex flex-col items-center justify-center text-center shadow-inner hover:bg-white/15 transition-all"
-        >
-          <div class="text-3xl mb-1" v-html="item.icon"></div>
-          <h3 class="text-gray-300 text-sm uppercase tracking-wider">
-            {{ item.name }}
-          </h3>
-          <p
-            class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-indigo-400"
+        <div class="grid grid-cols-2 gap-3">
+          <div
+            v-for="(item, i) in weatherData"
+            :key="i"
+            class="bg-gray-800/60 border border-gray-700 rounded-lg p-4 hover:bg-gray-800 hover:border-gray-600 transition-all"
           >
-            {{ item.value }}
-          </p>
-          <p class="text-gray-400 text-xs">{{ item.unit }}</p>
+            <div class="text-center">
+              <div class="text-xs text-gray-500 uppercase tracking-wider mb-2">
+                {{ item.name }}
+              </div>
+              <p class="text-2xl font-semibold text-white mb-1">
+                {{ item.value }}
+              </p>
+              <p class="text-gray-500 text-xs">{{ item.unit }}</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- MESSAGE PAR DÉFAUT -->
-      <div
-        v-else
-        class="text-center py-8 text-gray-400 italic flex flex-col items-center gap-2"
-      >
-        <div class="text-4xl animate-bounce">🌍</div>
-        <p>Veuillez utiliser la barre de recherche pour sélectionner un lieu.</p>
+      <div v-else class="text-center py-12 text-gray-500">
+        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-800 flex items-center justify-center">
+          <svg class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <p class="text-sm">Select a location to display weather data</p>
       </div>
     </transition>
 
-    <!-- FOOTER -->
-    <footer class="mt-6 text-gray-500 text-xs text-center border-t border-white/10 pt-3">
-      Données fournies par
-      <span class="text-sky-400 font-medium">NASA GES DISC</span> et
-      <span class="text-indigo-400 font-medium">Open-Meteo API</span>.
+    <footer class="mt-6 text-gray-600 text-xs text-center border-t border-gray-800 pt-4">
+      Data provided by <span class="text-gray-500">NASA GES DISC</span> and <span class="text-gray-500">Open-Meteo</span>
     </footer>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue"; // <-- AJOUTEZ 'watch' ici
+import { ref, computed, watch } from "vue";
 
-// Définition de la propriété 'location'
 const props = defineProps({
   location: {
     type: Object,
@@ -76,27 +65,32 @@ const props = defineProps({
   },
 });
 
-// --- État des données ---
 const temperature = ref("--");
 const precipitation = ref("--");
 const windSpeed = ref("--");
 const airQuality = ref("--");
 const dataLoaded = ref(false);
 
+const displayName = computed(() => {
+  if (props.location?.geojson?.properties?.display_name) {
+    return props.location.geojson.properties.display_name;
+  }
+  return 'Selected Location';
+});
+
 const weatherData = computed(() => [
-  { name: "Température", value: `${temperature.value} °C`, unit: "°C", icon: "🌡️" },
-  { name: "Précipitations", value: `${precipitation.value} mm`, unit: "mm", icon: "🌧️" },
-  { name: "Vent", value: `${windSpeed.value} m/s`, unit: "m/s", icon: "🌬️" },
-  { name: "Qualité de l’air", value: airQuality.value, unit: "AQI", icon: "🌫️" },
+  { name: "Temperature", value: `${temperature.value}°C`, unit: "Celsius" },
+  { name: "Precipitation", value: `${precipitation.value} mm`, unit: "Millimeters" },
+  { name: "Wind Speed", value: `${windSpeed.value} m/s`, unit: "Meters/sec" },
+  { name: "Air Quality", value: airQuality.value, unit: "Index" },
 ]);
 
-// --- AJOUT CLÉ : Surveiller la prop 'location' et appeler fetchWeather ---
 watch(
   () => props.location,
   (newLocation) => {
     if (newLocation && newLocation.lat && newLocation.lon) {
-      console.log("Localisation reçue. Démarrage de fetchWeather:", newLocation);
-      fetchWeather(); // L'appel de fetchWeather se fait ici.
+      console.log("Location received. Starting fetchWeather:", newLocation);
+      fetchWeather();
     } else {
       dataLoaded.value = false;
     }
@@ -104,28 +98,13 @@ watch(
   { deep: true }
 );
 
-// --- Logique de chargement des données ---
 function fetchWeather() {
-  // L'objet 'location' est accessible via 'props.location'
-  if (!props.location) return; 
+  if (!props.location) return;
 
-  // RETIRER LE DOUBLE defineProps INUTILE ET ERRONÉ:
-  /*
-  const props = defineProps({
-    location: {
-      type: Object,
-      default: null
-    }
-  })
-  */
-  
-  // Utilisez props.location.lat et props.location.lon pour votre appel API réel ici
-
-  // Logique actuelle (données aléatoires)
   temperature.value = (Math.random() * 30).toFixed(1);
   precipitation.value = (Math.random() * 10).toFixed(1);
   windSpeed.value = (Math.random() * 15).toFixed(1);
-  airQuality.value = ["Bonne", "Moyenne", "Mauvaise"][Math.floor(Math.random() * 3)];
+  airQuality.value = ["Good", "Moderate", "Poor"][Math.floor(Math.random() * 3)];
 
   dataLoaded.value = true;
 }
@@ -134,23 +113,10 @@ function fetchWeather() {
 <style scoped>
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.6s ease;
+  transition: opacity 0.4s ease;
 }
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
-}
-.animate-fade-in {
-  animation: fadeIn 1.2s ease-in-out;
-}
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 </style>

@@ -3,16 +3,13 @@ from contextlib import asynccontextmanager
 from routes.auth.login import router as login_router
 from routes.auth.register import router as register_router
 from routes.algo import router as algo_router
-from db.session import connect_db, disconnect_db
-
-client = None
-db = None
+from db import session
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await connect_db()
+    await session.connect_db()
     yield  
-    await disconnect_db()
+    await session.disconnect_db()
 
 app = FastAPI(lifespan=lifespan)
 

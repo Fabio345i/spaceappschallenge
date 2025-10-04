@@ -17,7 +17,7 @@ app = FastAPI(lifespan=lifespan)
 
 origins = [
     "http://localhost:5173",  # Domaine de dev
-    "https://mon-site.com",    # Domaine de prod
+    "http://167.160.189.194",    # Domaine de prod
 ]
 
 app.add_middleware(

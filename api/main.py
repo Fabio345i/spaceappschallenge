@@ -19,7 +19,7 @@ def read_root():
     return {"message": "Hello, FastAPI!"}
 
 # Routers
-app.include_router(register_router, prefix="/register", tags=["Login"])
-app.include_router(login_router, prefix="/login", tags=["Login"])
+app.include_router(register_router, prefix="/auth", tags=["Auth"])
+app.include_router(login_router, prefix="/auth", tags=["Auth"])
 app.include_router(algo_router, prefix="/algo", tags=["Algo"])
 app.include_router(rainfall.router, prefix="/weather", tags=["Weather"])

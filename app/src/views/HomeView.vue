@@ -4,6 +4,7 @@ import SearchBar from '@/components/SearchBar.vue'
 import GlobeCesium from '@/components/GlobeCesium.vue'
 import Tableaudebord from '@/components/Tableaudebord.vue'
 import Calendar from '@/components/Calendar.vue'
+import HourlyForecast from '@/components/HourlyForecast.vue'
 
 const target = ref(null)
 const mobileMenuOpen = ref(false)
@@ -33,7 +34,7 @@ function handleDateSelected(date) {
 <template>
   <div class="flex flex-col w-full bg-black text-gray-100">
     
-    <header class="fixed top-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800">
+    <header class="fixed top-0 left-0 right-0 z-500 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800">
       <nav class="max-w-full px-6">
         <div class="flex items-center justify-between h-16">
           
@@ -124,13 +125,24 @@ function handleDateSelected(date) {
     :selected-date="selectedDate" 
     @date-selected="handleDateSelected" 
   />
-        <Tableaudebord :location="target" class="overflow-y-auto max-h-full" />
+
+
+        <Tableaudebord :location="target" class=" max-h-full" />
         
       </div>
 
       <div class="flex-1 min-w-0 relative">
-        <GlobeCesium :target="target" />
-      </div>
+  
+  <HourlyForecast
+    :selected-date="selectedDate"
+    :location="target ? `${target.lat},${target.lon}` : 'Paris, France'"
+    
+    class="relative transform  w-full  px-4 z-50"
+  />
+    <GlobeCesium :target="target"     class="relative w-6/5 h-5/5  m-auto max-h-screen" 
+ />
+
+</div>
       
     </main>
   </div>

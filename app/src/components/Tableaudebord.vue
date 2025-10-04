@@ -1,81 +1,63 @@
 <template>
   <div
-    class="min-h-screen from-slate-900 via-slate-800 to-slate-900 text-white flex flex-col items-center justify-center p-6"
+    class="w-full bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-lg transition-all duration-300 hover:shadow-sky-500/20"
   >
     <!-- HEADER -->
-    <header class="text-center mb-14 animate-fade-in">
+    <header class="text-center mb-6 animate-fade-in">
       <h1
-        class="text-5xl font-extrabold tracking-tight bg-clip-text text-transparent  from-sky-400 via-indigo-400 to-violet-500 drop-shadow-xl"
+        class="text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-indigo-400 to-violet-500 drop-shadow-lg"
       >
-        🌌 Tableau de bord météo NASA
+        🌌 Données Météo
       </h1>
-      <p class="text-gray-400 mt-3 text-lg">
-        Analyse atmosphérique intelligente — Données satellites & modèles
-        <span class="text-sky-400">NASA</span>
+      <p class="text-gray-400 text-sm mt-2">
+        Analyse atmosphérique intelligente — Données satellites
+        <span class="text-sky-400 font-medium">NASA</span>
       </p>
     </header>
 
-    <!-- CONTAINER -->
-    
-<section
-  class="w-full max-w-6xl bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-10 shadow-[0_0_40px_-10px_rgba(56,189,248,0.25)] transition-all duration-300 hover:shadow-[0_0_60px_-8px_rgba(56,189,248,0.4)] hover:scale-[1.01]"
->
+    <!-- TABLEAU DE DONNÉES -->
+    <transition name="fade">
+      <div v-if="dataLoaded" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Affichage du lieu sélectionné -->
+        <div class="sm:col-span-2 text-center mb-4">
+          <h2 class="text-xl font-semibold text-sky-400">
+            Lieu sélectionné : {{ props.location?.geojson?.properties?.display_name || 'Coordonnées reçues' }}
+          </h2>
+          <p class="text-gray-500 text-xs">
+            Coordonnées : {{ props.location?.lat.toFixed(4) }} / {{ props.location?.lon.toFixed(4) }}
+          </p>
+        </div>
 
-      <!-- SEARCH BAR -->
-      <div
-        class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-10"
-      >
-        <input
-          v-model="location"
-          type="text"
-          placeholder="🔍 Entrez un lieu (ex: Québec, Canada)"
-          class="bg-white/10 border border-white/20 text-white placeholder-gray-400 rounded-2xl px-5 py-3 w-full sm:w-2/3 focus:outline-none focus:ring-2 focus:ring-sky-400 transition-all"
-        />
-        <button
-          @click="fetchWeather"
-          class=" from-sky-500 to-indigo-600 text-white font-semibold px-8 py-3 rounded-2xl shadow-md hover:shadow-sky-500/30 hover:scale-105 active:scale-95 transition-all duration-200"
+        <div
+          v-for="(item, i) in weatherData"
+          :key="i"
+          class="bg-white/10 border border-white/20 rounded-xl p-4 flex flex-col items-center justify-center text-center shadow-inner hover:bg-white/15 transition-all"
         >
-          Rechercher
-        </button>
+          <div class="text-3xl mb-1" v-html="item.icon"></div>
+          <h3 class="text-gray-300 text-sm uppercase tracking-wider">
+            {{ item.name }}
+          </h3>
+          <p
+            class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-indigo-400"
+          >
+            {{ item.value }}
+          </p>
+          <p class="text-gray-400 text-xs">{{ item.unit }}</p>
+        </div>
       </div>
 
-      <!-- DATA GRID -->
-      <transition name="fade">
-        <div
-          v-if="dataLoaded"
-          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-        >
-          <div
-            v-for="(item, i) in weatherData"
-            :key="i"
-            class="bg-white/10 border border-white/20 rounded-2xl p-5 flex flex-col items-center justify-center text-center shadow-inner hover:bg-white/15 transition-all"
-          >
-            <div class="text-4xl mb-2" v-html="item.icon"></div>
-            <h3 class="text-gray-300 text-sm uppercase tracking-wider">
-              {{ item.name }}
-            </h3>
-            <p
-              class="text-2xl font-bold bg-clip-text text-transparent  from-sky-400 to-indigo-400"
-            >
-              {{ item.value }}
-            </p>
-            <p class="text-gray-400 text-sm">{{ item.unit }}</p>
-          </div>
-        </div>
-
-        <!-- EMPTY STATE -->
-        <div
-          v-else
-          class="text-center py-16 text-gray-400 italic flex flex-col items-center gap-2"
-        >
-          <div class="text-5xl animate-bounce">🌍</div>
-          <p>Entrez un lieu pour afficher les conditions météorologiques.</p>
-        </div>
-      </transition>
-    </section>
+      <!-- MESSAGE PAR DÉFAUT -->
+      <div
+        v-else
+        class="text-center py-8 text-gray-400 italic flex flex-col items-center gap-2"
+      >
+        <div class="text-4xl animate-bounce">🌍</div>
+        <p>Veuillez utiliser la barre de recherche pour sélectionner un lieu.</p>
+      </div>
+    </transition>
 
     <!-- FOOTER -->
-    <footer class="mt-12 text-gray-500 text-sm text-center">
+    <footer class="mt-6 text-gray-500 text-xs text-center border-t border-white/10 pt-3">
       Données fournies par
       <span class="text-sky-400 font-medium">NASA GES DISC</span> et
       <span class="text-indigo-400 font-medium">Open-Meteo API</span>.
@@ -84,54 +66,68 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue"
+import { ref, computed, watch } from "vue"; // <-- AJOUTEZ 'watch' ici
 
-const location = ref("")
-const temperature = ref("--")
-const precipitation = ref("--")
-const windSpeed = ref("--")
-const airQuality = ref("--")
-const dataLoaded = ref(false)
+// Définition de la propriété 'location'
+const props = defineProps({
+  location: {
+    type: Object,
+    default: null,
+  },
+});
+
+// --- État des données ---
+const temperature = ref("--");
+const precipitation = ref("--");
+const windSpeed = ref("--");
+const airQuality = ref("--");
+const dataLoaded = ref(false);
 
 const weatherData = computed(() => [
-  {
-    name: "Température",
-    value: `${temperature.value} °C`,
-    unit: "°C",
-    icon: "🌡️",
-  },
-  {
-    name: "Précipitations",
-    value: `${precipitation.value} mm`,
-    unit: "mm",
-    icon: "🌧️",
-  },
-  {
-    name: "Vent",
-    value: `${windSpeed.value} m/s`,
-    unit: "m/s",
-    icon: "🌬️",
-  },
-  {
-    name: "Qualité de l’air",
-    value: airQuality.value,
-    unit: "AQI",
-    icon: "🌫️",
-  },
-])
+  { name: "Température", value: `${temperature.value} °C`, unit: "°C", icon: "🌡️" },
+  { name: "Précipitations", value: `${precipitation.value} mm`, unit: "mm", icon: "🌧️" },
+  { name: "Vent", value: `${windSpeed.value} m/s`, unit: "m/s", icon: "🌬️" },
+  { name: "Qualité de l’air", value: airQuality.value, unit: "AQI", icon: "🌫️" },
+]);
 
+// --- AJOUT CLÉ : Surveiller la prop 'location' et appeler fetchWeather ---
+watch(
+  () => props.location,
+  (newLocation) => {
+    if (newLocation && newLocation.lat && newLocation.lon) {
+      console.log("Localisation reçue. Démarrage de fetchWeather:", newLocation);
+      fetchWeather(); // L'appel de fetchWeather se fait ici.
+    } else {
+      dataLoaded.value = false;
+    }
+  },
+  { deep: true }
+);
+
+// --- Logique de chargement des données ---
 function fetchWeather() {
-  if (!location.value) return alert("Veuillez entrer un lieu")
+  // L'objet 'location' est accessible via 'props.location'
+  if (!props.location) return; 
 
-  // Simulation (à remplacer par ton API réelle)
-  temperature.value = (Math.random() * 30).toFixed(1)
-  precipitation.value = (Math.random() * 10).toFixed(1)
-  windSpeed.value = (Math.random() * 15).toFixed(1)
-  airQuality.value = ["Bonne", "Moyenne", "Mauvaise"][
-    Math.floor(Math.random() * 3)
-  ]
+  // RETIRER LE DOUBLE defineProps INUTILE ET ERRONÉ:
+  /*
+  const props = defineProps({
+    location: {
+      type: Object,
+      default: null
+    }
+  })
+  */
+  
+  // Utilisez props.location.lat et props.location.lon pour votre appel API réel ici
 
-  dataLoaded.value = true
+  // Logique actuelle (données aléatoires)
+  temperature.value = (Math.random() * 30).toFixed(1);
+  precipitation.value = (Math.random() * 10).toFixed(1);
+  windSpeed.value = (Math.random() * 15).toFixed(1);
+  airQuality.value = ["Bonne", "Moyenne", "Mauvaise"][Math.floor(Math.random() * 3)];
+
+  dataLoaded.value = true;
 }
 </script>
 

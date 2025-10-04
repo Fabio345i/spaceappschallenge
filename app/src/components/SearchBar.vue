@@ -58,7 +58,7 @@ function selectPlace(place) {
 
 <style scoped>
 .search-bar {
-  position: absolute;
+  position: relative;
   top: 10px;
   left: 10px;
   z-index: 10;

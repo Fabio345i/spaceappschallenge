@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import SearchBar from '@/components/SearchBar.vue'
 import GlobeCesium from '@/components/GlobeCesium.vue'
 import Tableaudebord from '@/components/Tableaudebord.vue'
+import Calendar from '@/components/Calendar.vue'
 
 const target = ref(null)
 const mobileMenuOpen = ref(false)
@@ -18,10 +19,19 @@ function selectFavorite(fav) {
   target.value = { lat: fav.lat, lon: fav.lon }
   favoritesOpen.value = false
 }
+
+
+
+const selectedDate = ref(new Date())
+
+function handleDateSelected(date) {
+  selectedDate.value = date
+  console.log('Date sélectionnée:', date)
+}
 </script>
 
 <template>
-  <div class="flex flex-col h-screen w-full bg-black text-gray-100">
+  <div class="flex flex-col w-full bg-black text-gray-100">
     
     <header class="fixed top-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800">
       <nav class="max-w-full px-6">
@@ -110,7 +120,12 @@ function selectFavorite(fav) {
       
       <div class="relative z-10 p-4 w-full sm:w-96 flex-shrink-0 bg-black/40 backdrop-blur-sm">
         <SearchBar @location-selected="target = $event" class="mb-4" />
+          <Calendar 
+    :selected-date="selectedDate" 
+    @date-selected="handleDateSelected" 
+  />
         <Tableaudebord :location="target" class="overflow-y-auto max-h-full" />
+        
       </div>
 
       <div class="flex-1 min-w-0 relative">

@@ -1,23 +1,33 @@
+// 🚀 src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '@/views/HomeView.vue'
 
+// 🧩 Lazy loading du composant principal
+const Tableaudebord = () => import('@/components/Tableaudebord.vue')
+
+// 🛰️ Configuration du routeur
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      name: 'home',
-      component: HomeView,
+      name: 'tableaudebord',
+      component: Tableaudebord,
+      meta: {
+        title: 'Tableau de bord | NASA Météo',
+        transition: 'fade',
+      },
     },
+    // 🔁 Redirection automatique pour toute route inconnue
     {
-      path: '/about',
-      name: 'about',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () => import('../views/AboutView.vue'),
+      path: '/:pathMatch(.*)*',
+      redirect: '/',
     },
   ],
+})
+
+// 🧠 Mise à jour automatique du titre de la page
+router.afterEach((to) => {
+  document.title = to.meta.title || 'NASA Dashboard'
 })
 
 export default router

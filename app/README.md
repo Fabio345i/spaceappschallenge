@@ -11,5 +11,5 @@
   - Géocodage (recherche de lieux, coordonnées, polygones simplifiés)
 - [OSM Boundaries API](https://osm-boundaries.com/)  
   - Récupération des **frontières administratives précises** (GeoJSON haute fidélité)
-- [Overpass API](https://overpass-api.de/) *(optionnel / fallback)*  
-  - Permet d’interroger les données OpenStreetMap pour récupérer des limites ou d’autres données géographiques
+- [Overpass API](https://overpass-api.de/) *(optionnel / fallback)*     
+  - Permet d’interroger les données OpenStreetMap pour récupérer des limites ou d’autres données géographiques 

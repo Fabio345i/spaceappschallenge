@@ -39,6 +39,7 @@ MarkupSafe==2.1.5
 mdurl==0.1.2
 multidict==6.1.0
 mysql-connector-python==9.0.0
+mysqlclient==2.2.7
 passlib==1.7.4
 psycopg2-binary==2.9.10
 pyasn1==0.6.1

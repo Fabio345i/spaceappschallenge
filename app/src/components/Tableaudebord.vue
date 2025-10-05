@@ -4,7 +4,7 @@
       Current Conditions
     </h2>
 
-    <!-- 🔥 Skeleton uniquement si on charge vraiment une ville -->
+    <!-- 🔥 Skeleton only if actually loading a location -->
     <template v-if="loading && hasLocation">
       <div class="animate-pulse space-y-4">
         <div class="h-4 w-40 bg-gray-700/60 rounded"></div>
@@ -32,22 +32,22 @@
       </div>
     </template>
 
-    <!-- 🔥 Contenu réel si data chargée OU aucune ville (on affiche 0) -->
+    <!-- 🔥 Actual content if data is loaded OR no location (we show 0s) -->
     <template v-else>
       <div class="mt-6 bg-gray-800/40 border border-gray-700 rounded-lg p-5 m-2 text-center">
-        <p class="text-sm font-medium text-white mb-1">Analyse rapide</p>
+        <p class="text-sm font-medium text-white mb-1">Quick Analysis</p>
         <p class="text-gray-300 text-sm leading-relaxed">
           {{ weatherSummary }}
         </p>
       </div>
 
       <div class="mt-6 bg-gray-800/50 p-4 rounded-lg border border-gray-700 m-2">
-        <h3 class="text-sm text-gray-400 uppercase font-semibold mb-2">Suggestion du jour</h3>
+        <h3 class="text-sm text-gray-400 uppercase font-semibold mb-2">Suggested Activity</h3>
         <p class="text-lg font-bold text-white">{{ activitySuggestion.title }}</p>
         <p class="text-sm text-gray-300 mt-1">{{ activitySuggestion.activity }}</p>
 
         <div class="mt-3 bg-gray-900/60 rounded-lg border border-gray-800 p-3">
-          <h4 class="text-xs uppercase text-gray-400 font-semibold mb-2">Préparatifs recommandés</h4>
+          <h4 class="text-xs uppercase text-gray-400 font-semibold mb-2">Recommended Preparations</h4>
           <ul class="list-disc list-inside text-xs text-gray-400 text-left space-y-1">
             <li v-for="(item, i) in activitySuggestion.preparations" :key="i">{{ item }}</li>
           </ul>
@@ -65,7 +65,7 @@
 
       <div class="flex gap-2 mt-6">
         <button @click="generatePDF"
-          class="relative flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-gray-100 border border-gray-700 from-gray-800 via-gray-900 to-black hover:from-blue-700 hover:via-blue-800 hover:to-gray-900 hover:border-gray-600 hover:shadow-[0_0_15px_rgba(59,130,246,0.4)] active:scale-95 transition-all duration-300 ease-out overflow-hidden">
+          class="relative flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-gray-100 border hover:bg-gray-700 border border-gray-700 rounded-lg text-gray-300 hover:text-white text-sm font-medium transition-colors duration-200">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
@@ -110,12 +110,12 @@ const displayName = computed(
 )
 
 const weatherData = computed(() => [
-  { name: 'Temp moyenne', value: `${temperature.value}°C` },
+  { name: 'Average Temp', value: `${temperature.value}°C` },
   { name: 'Min / Max', value: `${tMin.value}°C / ${tMax.value}°C` },
-  { name: 'Humidité', value: `${humidity.value}%` },
-  { name: 'Vent', value: `${wind.value} m/s` },
-  { name: 'Pression', value: `${pressure.value} kPa` },
-  // { name: 'Pluie', value: `${rain.value} mm` },
+  { name: 'Humidity', value: `${humidity.value}%` },
+  { name: 'Wind', value: `${wind.value} m/s` },
+  { name: 'Pressure', value: `${pressure.value} kPa` },
+  // { name: 'Precipitation', value: `${rain.value} mm` },
 ])
 
 watch(() => [props.location, props.selectedDate], ([loc, date]) => {
@@ -199,18 +199,18 @@ const weatherSummary = computed(() => {
   const h = Number(humidity.value)
   const w = Number(wind.value)
   const r = Number(rain.value)
-  if (isNaN(t) || isNaN(h) || isNaN(w)) return "Analyse en cours..."
+  if (isNaN(t) || isNaN(h) || isNaN(w)) return "Analysis in progress..."
 
   let summary = ""
-  if (t < 0) summary += "Froid intense"
-  else if (t < 10) summary += "Temps froid"
-  else if (t < 20) summary += "Temps frais"
-  else if (t < 28) summary += "Agréable"
-  else summary += "Chaleur marquée"
+  if (t < 0) summary += "Severe cold"
+  else if (t < 10) summary += "Cold weather"
+  else if (t < 20) summary += "Cool"
+  else if (t < 28) summary += "Pleasant"
+  else summary += "Hot"
 
-  if (r > 5) summary += ", risque de pluie"
-  if (h > 80) summary += ", humidité élevée"
-  if (w > 10) summary += ", vent sensible"
+  if (r > 5) summary += ", possible rain"
+  if (h > 80) summary += ", high humidity"
+  if (w > 10) summary += ", windy"
   return summary + "."
 })
 
@@ -219,25 +219,25 @@ const activitySuggestion = computed(() => {
   const r = Number(rain.value)
   const w = Number(wind.value)
 
-  if (r > 5) return {title:"Journée pluvieuse",activity:"Idéale pour rester au chaud — film, lecture ou détente.",tips:"Pense à ton parapluie",preparations:["Parapluie","Chaussures étanches","Boisson chaude","Éviter les trajets longs"]}
-  if (t <= 0) return {title:"Temps froid",activity:"Ski, patin, ou soirée cocooning à la maison.",tips:"Habille-toi chaudement",preparations:["Gants","Vêtements chauds","Surveiller les routes glacées"]}
-  if (t > 25 && r < 2) return {title:"Belle journée",activity:"Parfaite pour une sortie nature ou un BBQ.",tips:"Pense à la crème solaire",preparations:["Crème solaire","Bouteille d’eau","Lunettes de soleil","Vêtements légers"]}
-  if (w > 25) return {title:"Vent fort",activity:"Privilégie les activités intérieures.",tips:"Évite les balades en vélo",preparations:["Veste coupe-vent","Attacher les objets dehors","Reporter sorties altitude"]}
-  return {title:"Météo douce",activity:"Idéale pour marcher ou flâner en ville.",tips:"Profite du plein air",preparations:["Veste légère","Chaussures confortables","Sortie tranquille"]}
+  if (r > 5) return {title:"Rainy day",activity:"Perfect to stay warm — movie, reading or relaxing.",tips:"Bring an umbrella",preparations:["Umbrella","Waterproof shoes","Hot drink","Avoid long trips"]}
+  if (t <= 0) return {title:"Cold weather",activity:"Skiing, skating, or cozy evening at home.",tips:"Dress warmly",preparations:["Gloves","Warm clothes","Watch for icy roads"]}
+  if (t > 25 && r < 2) return {title:"Beautiful day",activity:"Perfect for outdoor activities or BBQ.",tips:"Use sunscreen",preparations:["Sunscreen","Water bottle","Sunglasses","Light clothes"]}
+  if (w > 25) return {title:"Strong wind",activity:"Better to do indoor activities.",tips:"Avoid cycling trips",preparations:["Windbreaker jacket","Secure outdoor objects","Avoid mountain trips"]}
+  return {title:"Mild weather",activity:"Great for walking or city exploring.",tips:"Enjoy fresh air",preparations:["Light jacket","Comfortable shoes","Plan a chill outing"]}
 })
 
 function generatePDF() {
   const doc = new jsPDF()
   const d = new Date(props.selectedDate)
 
-  const primary = [243, 244, 246]        // texte principal (gray-100)
-  const accent = [156, 163, 175]         // gris subtil (gray-400)
-  const background = [0, 0, 0]           // fond principal noir
-  const backgroundSecondary = [17, 24, 39] // gray-900
-  const border = [31, 41, 55]            // gray-800
-  const borderLight = [55, 65, 81]       // gray-700
-  const textGray = [209, 213, 219]       // gray-300
-  const textSubtle = [156, 163, 175]     // gray-400
+  const primary = [243, 244, 246]        
+  const accent = [156, 163, 175]         
+  const background = [0, 0, 0]           
+  const backgroundSecondary = [17, 24, 39] 
+  const border = [31, 41, 55]            
+  const borderLight = [55, 65, 81]       
+  const textGray = [209, 213, 219]       
+  const textSubtle = [156, 163, 175]     
 
   doc.setFillColor(...background)
   doc.rect(0, 0, 210, 297, 'F')
@@ -311,7 +311,6 @@ function generatePDF() {
   const summary = doc.splitTextToSize(weatherSummary.value, 170)
   doc.text(summary, 20, y)
 
-  // Bloc data météo
   y += 20
   const weatherData = [
     ["Average Temp", `${temperature.value} °C`],
@@ -391,12 +390,11 @@ function generatePDF() {
   doc.setTextColor(...textSubtle)
   doc.setFontSize(8)
   doc.text("Data: NASA POWER, NLDAS2, Open-Meteo", 20, y)
-  doc.text("© 2025 SpaceApps – fait par Les GOLMONS :)", 190, y, { align: "right" })
+  doc.text("© 2025 SpaceApps – made by Les GOLMONS :)", 190, y, { align: "right" })
 
   const filename = `weather_report_${d.toISOString().split("T")[0]}_${displayName.value.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`
   doc.save(filename)
 }
-
 
 function resetView() {
   emit('reset-view')

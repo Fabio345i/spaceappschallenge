@@ -38,7 +38,7 @@ const target = ref(null)
 const mobileMenuOpen = ref(false)
 const favoritesOpen = ref(false)
 const resetTrigger = ref(0)
-const isAuthenticated = ref(!!localStorage.getItem("token"))
+const isAuthenticated = ref(!!localStorage.getItem('token'))
 const favorites = ref([])
 const favoriteAdded = ref(false)
 
@@ -48,14 +48,15 @@ const showRegisterPopover = ref(false)
 
 const isCurrentLocationFavorite = computed(() => {
   if (!target.value || !favorites.value.length) return false
-  
-  const name = target.value.city || 
-    target.value.town || 
-    target.value.village || 
-    target.value.display_name || 
+
+  const name =
+    target.value.city ||
+    target.value.town ||
+    target.value.village ||
+    target.value.display_name ||
     `${target.value.lat.toFixed(2)}, ${target.value.lon.toFixed(2)}`
-  
-  return favorites.value.some(f => f.name === name)
+
+  return favorites.value.some((f) => f.name === name)
 })
 
 onMounted(async () => {
@@ -84,13 +85,13 @@ function openRegister() {
 async function handleLoginSuccess() {
   isAuthenticated.value = true
   try {
-    const token = localStorage.getItem("token")
-    const { data } = await axios.get("http://localhost:8000/auth/favorites", {
-      headers: { Authorization: `Bearer ${token}` }
+    const token = localStorage.getItem('token')
+    const { data } = await axios.get('http://localhost:8000/auth/favorites', {
+      headers: { Authorization: `Bearer ${token}` },
     })
     favorites.value = data
   } catch (err) {
-    console.error("Failed to fetch favorites", err)
+    console.error('Failed to fetch favorites', err)
   }
 }
 
@@ -101,9 +102,10 @@ async function addFavorite(location) {
   }
 
   // Essayer d'obtenir un nom descriptif
-  let name = location.city || 
-    location.town || 
-    location.village || 
+  let name =
+    location.city ||
+    location.town ||
+    location.village ||
     location.municipality ||
     location.county ||
     location.state ||
@@ -130,7 +132,7 @@ async function addFavorite(location) {
       headers: { Authorization: `Bearer ${token}` },
     })
     favorites.value.push(favorite)
-    
+
     favoriteAdded.value = true
     setTimeout(() => {
       favoriteAdded.value = false
@@ -229,22 +231,21 @@ function handleLocationSelected(location) {
 
 <template>
   <TutorialDriver ref="tutorial" />
-  
+
   <!-- Popovers Login/Register -->
-  <LoginPopover 
-    :visible="showLoginPopover" 
+  <LoginPopover
+    :visible="showLoginPopover"
     @close="showLoginPopover = false"
     @switch-to-register="openRegister"
     @login-success="handleLoginSuccess"
   />
-  
-  <RegisterPopover 
-    :visible="showRegisterPopover" 
+
+  <RegisterPopover
+    :visible="showRegisterPopover"
     @close="showRegisterPopover = false"
     @switch-to-login="openLogin"
     @register-success="openLogin"
   />
-  
 
   <div class="flex flex-col h-screen w-full bg-black text-gray-100">
     <header
@@ -311,14 +312,6 @@ function handleLocationSelected(location) {
                 </div>
               </div>
             </div>
-            
-            <a href="#" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">Data</a>
-            <a href="#" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">About</a>
-            
-            <button v-if="!isAuthenticated" @click="openLogin" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
-              Login
-            </button>
-            <button v-else @click="logout" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
 
             <a href="#" class="text-gray-400 hover:text-white transition-colors text-sm font-medium"
               >Data</a
@@ -326,6 +319,22 @@ function handleLocationSelected(location) {
             <a href="#" class="text-gray-400 hover:text-white transition-colors text-sm font-medium"
               >About</a
             >
+
+            <button
+              v-if="!isAuthenticated"
+              @click="openLogin"
+              class="text-gray-400 hover:text-white transition-colors text-sm font-medium"
+            >
+              Login
+            </button>
+            <button
+              v-else
+              @click="logout"
+              class="text-gray-400 hover:text-white transition-colors text-sm font-medium"
+            >
+              Logout
+            </button>
+
             <button
               v-if="isAuthenticated"
               @click="logout"
@@ -359,14 +368,34 @@ function handleLocationSelected(location) {
         </div>
 
         <div v-if="mobileMenuOpen" class="md:hidden border-t border-gray-800 py-3">
-          <a href="#" class="block px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 text-sm rounded">Home</a>
-          <button @click="toggleFavorites" class="block w-full text-left px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 text-sm rounded">Favorites</button>
-          <a href="#" class="block px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 text-sm rounded">Data</a>
-          <a href="#" class="block px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 text-sm rounded">About</a>
-          <button v-if="!isAuthenticated" @click="openLogin" class="block w-full text-left px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 text-sm rounded">
+          <a
+            href="#"
+            class="block px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 text-sm rounded"
+            >Home</a
+          >
+          <button
+            @click="toggleFavorites"
+            class="block w-full text-left px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 text-sm rounded"
+          >
+            Favorites
+          </button>
+          <a
+            href="#"
+            class="block px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 text-sm rounded"
+            >Data</a
+          >
+          <button
+            v-if="!isAuthenticated"
+            @click="openLogin"
+            class="block w-full text-left px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 text-sm rounded"
+          >
             Login
           </button>
-          <button v-else @click="logout" class="block w-full text-left px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 text-sm rounded">
+          <button
+            v-else
+            @click="logout"
+            class="block w-full text-left px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 text-sm rounded"
+          >
             Disconnect
           </button>
           <a
@@ -431,24 +460,30 @@ function handleLocationSelected(location) {
               Location Search
             </h2>
             <SearchBar @location-selected="handleLocationSelected" />
-<button 
-  v-if="isAuthenticated && target" 
-  @click="addFavorite(target)" 
-  class="mt-2 w-full px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 hover:text-white text-sm font-medium rounded-lg transition-all duration-300 flex items-center justify-center gap-2"
->
-<svg 
-  class="w-4 h-4 transition-all duration-500" 
-  :class="{ 'fill-yellow-400 stroke-yellow-400': favoriteAdded || isCurrentLocationFavorite }"
-  viewBox="0 0 24 24" 
-  fill="none" 
-  stroke="currentColor" 
-  stroke-width="2"
->
-  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
-</svg>
-  Add to Favorites
-</button>
-            <p class="text-xs text-gray-600 mt-2">Search for any city, region, or coordinates worldwide</p>
+            <button
+              v-if="isAuthenticated && target"
+              @click="addFavorite(target)"
+              class="mt-2 w-full px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 hover:text-white text-sm font-medium rounded-lg transition-all duration-300 flex items-center justify-center gap-2"
+            >
+              <svg
+                class="w-4 h-4 transition-all duration-500"
+                :class="{
+                  'fill-yellow-400 stroke-yellow-400': favoriteAdded || isCurrentLocationFavorite,
+                }"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                ></path>
+              </svg>
+              Add to Favorites
+            </button>
+            <p class="text-xs text-gray-600 mt-2">
+              Search for any city, region, or coordinates worldwide
+            </p>
             <button
               v-if="isAuthenticated && target"
               @click="addFavorite(target)"
@@ -456,9 +491,6 @@ function handleLocationSelected(location) {
             >
               + Favorite
             </button>
-            <p class="text-xs text-gray-600 mt-2">
-              Search for any city, region, or coordinates worldwide
-            </p>
           </div>
 
           <div>
@@ -522,10 +554,7 @@ function handleLocationSelected(location) {
         <!-- Globe -->
         <div class="flex justify-center items-center p-4">
           <div id="cesiumContainer" class="w-[400px] h-[400px]">
-            <GlobeCesium
-              :target="target"
-              :reset-trigger="resetTrigger"
-            />
+            <GlobeCesium :target="target" :reset-trigger="resetTrigger" />
           </div>
         </div>
       </div>

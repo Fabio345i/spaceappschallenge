@@ -5,7 +5,7 @@
     </h2>
 
     <div v-if="dataLoaded">
-      <!-- Localisation -->
+      <!--Localisation -->
       <div class="mb-4 pb-3 border-b border-gray-800">
         <p class="text-xs text-gray-400 mb-0.5">Location</p>
         <p class="text-sm font-medium text-white truncate">{{ displayName }}</p>
@@ -38,16 +38,32 @@
 
 
 
-<!-- Résumé météo -->
-<div class="mt-6 bg-gray-800/40 border border-gray-700 rounded-lg p-5 m-2 text-center">
-  <p class="text-sm font-medium text-white mb-1">Analyse rapide</p>
-  <p class="text-gray-300 text-sm leading-relaxed">
-    {{ weatherSummary }}
-  </p>
-</div>
+      <!-- météo -->
+      <div class="mt-6 bg-gray-800/40 border border-gray-700 rounded-lg p-5 m-2 text-center">
+        <p class="text-sm font-medium text-white mb-1">Analyse rapide</p>
+        <p class="text-gray-300 text-sm leading-relaxed">
+          {{ weatherSummary }}
+        </p>
+      </div>
 
-      <!-- Stats -->
-      <div class="grid grid-cols-2 gap-3">
+      <!-- Suggestions -->
+      <div class="mt-6 bg-gray-800/50 p-4 rounded-lg border border-gray-700 m-2">
+        <h3 class="text-sm text-gray-400 uppercase font-semibold mb-2">Suggestion du jour</h3>
+        <p class="text-lg font-bold text-white">{{ activitySuggestion.title }}</p>
+        <p class="text-sm text-gray-300 mt-1">{{ activitySuggestion.activity }}</p>
+
+        <div class="mt-3 bg-gray-900/60 rounded-lg border border-gray-800 p-3">
+          <h4 class="text-xs uppercase text-gray-400 font-semibold mb-2">Préparatifs recommandés</h4>
+          <ul class="list-disc list-inside text-xs text-gray-400 text-left space-y-1">
+            <li v-for="(item, i) in activitySuggestion.preparations" :key="i">{{ item }}</li>
+          </ul>
+        </div>
+
+        <p class="text-xs text-gray-500 mt-2 italic">{{ activitySuggestion.tips }}</p>
+      </div>
+
+      <!-- Statistiques -->
+      <div class="grid grid-cols-2 gap-3 mt-4">
         <div
           v-for="(item, i) in weatherData"
           :key="i"
@@ -62,13 +78,16 @@
       <div class="flex gap-2 mt-6">
         <button
           @click="generatePDF()"
-          class="flex items-center gap-2 py-2 px-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg text-gray-300 hover:text-white text-sm font-medium transition-colors duration-200"
-        >
+ class="relative flex items-center gap-2 px-5 py-2.5
+         rounded-xl font-semibold text-gray-100
+         border border-gray-700
+          from-gray-800 via-gray-900 to-black
+         hover:from-blue-700 hover:via-blue-800 hover:to-gray-900
+         hover:border-gray-600 hover:shadow-[0_0_15px_rgba(59,130,246,0.4)]
+         active:scale-95 transition-all duration-300 ease-out
+         overflow-hidden">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
             />
           </svg>
@@ -77,26 +96,22 @@
 
         <button
           @click="resetView"
-          class="py-2 px-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg text-gray-300 hover:text-white text-sm font-medium transition-colors duration-200"
+          class="py-2 px-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg text-gray-300
+           hover:text-white text-sm font-medium transition-colors duration-200 hover:shadow-[0_0_15px_rgba(59,130,246,0.4)]
+         active:scale-95 transition-all duration-300 ease-out
+         overflow-hidden"
         >
           Reset View
         </button>
       </div>
     </div>
 
+    <!-- Aucun résultat -->
     <div v-else class="text-center py-6 text-gray-600">
-      <svg
-        class="w-10 h-10 mx-auto mb-2 text-gray-700"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
+      <svg class="w-10 h-10 mx-auto mb-2 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
           d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-        ></path>
+        />
       </svg>
       <p class="text-xs">Select a location and date</p>
     </div>
@@ -108,6 +123,7 @@ import { ref, computed, watch } from 'vue'
 import { jsPDF } from 'jspdf'
 import axios from 'axios'
 
+// ===Props / Emit ===
 const props = defineProps({
   location: { type: Object, default: null },
   selectedDate: { type: Date, default: () => new Date() },
@@ -149,7 +165,7 @@ const rain = ref('--')
 const dataLoaded = ref(false)
 
 const displayName = computed(
-  () => props.location?.geojson?.properties?.display_name || 'Selected Location',
+  () => props.location?.geojson?.properties?.display_name || 'Selected Location'
 )
 
 const weatherData = computed(() => [
@@ -161,36 +177,37 @@ const weatherData = computed(() => [
   { name: 'Pluie', value: `${rain.value} mm` },
 ])
 
-watch(
-  () => [props.location, props.selectedDate],
-  ([loc, date]) => {
-    if (loc?.lat && loc?.lon) fetchWeather(loc, date)
-    else dataLoaded.value = false
-  },
-  { deep: true },
-)
-
-function isSameDayUTC(a, b) {
-  const da = new Date(Date.UTC(a.getUTCFullYear(), a.getUTCMonth(), a.getUTCDate()))
-  const db = new Date(Date.UTC(b.getUTCFullYear(), b.getUTCMonth(), b.getUTCDate()))
-  return da.getTime() === db.getTime()
-}
-
-function isPastOrTodayUTC(d) {
-  const today = new Date()
-  const dUTC = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
-  const tUTC = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()))
-  return dUTC.getTime() <= tUTC.getTime()
-}
+watch(() => [props.location, props.selectedDate], ([loc, date]) => {
+  if (loc?.lat && loc?.lon) fetchWeather(loc, date)
+  else dataLoaded.value = false
+}, { deep: true })
 
 async function fetchWeather(loc, date) {
-  const d = new Date(date)
-  const y = d.getUTCFullYear()
-  const m = String(d.getUTCMonth() + 1).padStart(2, "0")
-  const day = String(d.getUTCDate()).padStart(2, "0")
-  const dateStr = `${y}${m}${day}`
+  try {
+    const d = new Date(date)
+    const y = d.getUTCFullYear()
+    const m = String(d.getUTCMonth() + 1).padStart(2, "0")
+    const day = String(d.getUTCDate()).padStart(2, "0")
+    const dateStr = `${y}${m}${day}`
+    dataLoaded.value = false
 
-  dataLoaded.value = false
+    const { data } = await axios.get("http://127.0.0.1:8000/algo/daily/analyse", {
+      params: { lat: loc.lat, lon: loc.lon, day, month: m, years: 20 }
+    })
+    const a = data || {}
+
+    temperature.value = a.T_moyenne?.toFixed(1) ?? "--"
+    tMin.value = a.Tmin_moyenne?.toFixed(1) ?? "--"
+    tMax.value = a.Tmax_moyenne?.toFixed(1) ?? "--"
+    humidity.value = a.humidite_moyenne?.toFixed(0) ?? "--"
+    wind.value = a.vent_moyen_m_s?.toFixed(1) ?? "--"
+    pressure.value = a.pression_moy_kPa?.toFixed(1) ?? "--"
+    rain.value = (a.precipitation_totale ?? 0).toFixed(1)
+
+    dataLoaded.value = true
+  } catch (e) {
+    console.error("Erreur API :", e)
+
 
   try {
     if (isPastOrTodayUTC(d)) {
@@ -265,240 +282,246 @@ async function fetchWeather(loc, date) {
   }
 }
 
-function generatePDF() {
-  const doc = new jsPDF()
-  const d = new Date(props.selectedDate)
-
-  // Couleurs professionnelles épurées
-  const primary = [30, 58, 138] // Bleu foncé professionnel
-  const accent = [59, 130, 246] // Bleu moyen
-  const textDark = [17, 24, 39] // Gris très foncé
-  const textGray = [107, 114, 128] // Gris moyen
-  const borderGray = [229, 231, 235] // Bordure légère
-
-  // === HEADER MINIMALISTE ===
-  doc.setDrawColor(...borderGray)
-  doc.setLineWidth(0.3)
-  doc.line(20, 30, 190, 30)
-
-  doc.setTextColor(...primary)
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(24)
-  doc.text('Weather Report', 20, 20)
-
-  doc.setTextColor(...textGray)
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(10)
-  doc.text(
-    `Generated on ${new Date().toLocaleDateString('en-US')} at ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`,
-    20,
-    27,
-  )
-
-  // === INFORMATIONS GÉNÉRALES ===
-  let y = 45
-
-  doc.setTextColor(...textDark)
-  doc.setFontSize(12)
-  doc.setFont('helvetica', 'bold')
-  doc.text('General Information', 20, y)
-
-  y += 2
-  doc.setDrawColor(...accent)
-  doc.setLineWidth(1.5)
-  doc.line(20, y, 70, y)
-
-  y += 10
-
-  // Tableau d'informations
-  doc.setFontSize(10)
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(...textDark)
-
-  doc.text('Analysis Date', 20, y)
-  doc.setFont('helvetica', 'bold')
-  doc.text(
-    d.toLocaleDateString('en-US', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    }),
-    80,
-    y,
-  )
-
-  y += 8
-  doc.setFont('helvetica', 'normal')
-  doc.text('Location', 20, y)
-  doc.setFont('helvetica', 'bold')
-  const locationName =
-    props.location?.city ||
-    props.location?.town ||
-    props.location?.village ||
-    props.location?.display_name ||
-    `${props.location?.lat.toFixed(2)}°, ${Math.abs(props.location?.lon).toFixed(2)}°${props.location?.lon >= 0 ? 'E' : 'W'}`
-  doc.text(locationName, 80, y)
-
-  y += 8
-  doc.setFont('helvetica', 'normal')
-  doc.text('Coordinates', 20, y)
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(...textGray)
-  doc.text(
-    `${props.location?.lat.toFixed(4)}° N, ${Math.abs(props.location?.lon).toFixed(4)}° ${props.location?.lon >= 0 ? 'E' : 'W'}`,
-    80,
-    y,
-  )
-
-  // === DONNÉES MÉTÉOROLOGIQUES ===
-  y += 20
-
-  doc.setTextColor(...textDark)
-  doc.setFontSize(12)
-  doc.setFont('helvetica', 'bold')
-  doc.text('Weather Conditions', 20, y)
-
-  y += 2
-  doc.setDrawColor(...accent)
-  doc.setLineWidth(1.5)
-  doc.line(20, y, 80, y)
-
-  y += 12
-
-  // Tableau de données épuré
-  const weatherData = [
-    { label: 'Average Temperature', value: `${temperature.value} °C`, unit: '°C' },
-    { label: 'Minimum Temperature', value: `${tMin.value} °C`, unit: '°C' },
-    { label: 'Maximum Temperature', value: `${tMax.value} °C`, unit: '°C' },
-    { label: 'Relative Humidity', value: `${humidity.value} %`, unit: '%' },
-    { label: 'Wind Speed', value: `${wind.value} m/s`, unit: 'm/s' },
-    { label: 'Atmospheric Pressure', value: `${pressure.value} kPa`, unit: 'kPa' },
-    { label: 'Precipitation', value: `${rain.value} mm`, unit: 'mm' },
-  ]
-
-  // En-tête du tableau
-  doc.setFillColor(249, 250, 251)
-  doc.rect(20, y, 170, 8, 'F')
-
-  doc.setDrawColor(...borderGray)
-  doc.setLineWidth(0.3)
-  doc.rect(20, y, 170, 8)
-
-  doc.setTextColor(...textDark)
-  doc.setFontSize(9)
-  doc.setFont('helvetica', 'bold')
-  doc.text('Parameter', 25, y + 5.5)
-  doc.text('Value', 160, y + 5.5)
-
-  y += 8
-
-  // Lignes de données
-  weatherData.forEach((item, index) => {
-    // Ligne de séparation
-    doc.setDrawColor(...borderGray)
-    doc.setLineWidth(0.3)
-    doc.line(20, y, 190, y)
-
-    // Contenu
-    doc.setTextColor(...textDark)
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(9)
-    doc.text(item.label, 25, y + 5.5)
-
-    doc.setFont('helvetica', 'bold')
-    const valueWidth = doc.getTextWidth(item.value)
-    doc.text(item.value, 185 - valueWidth, y + 5.5)
-
-    y += 8
-  })
-
-  // Bordure finale du tableau
-  doc.setDrawColor(...borderGray)
-  doc.line(20, y, 190, y)
-
-  // Bordures verticales du tableau
-  doc.line(20, y - weatherData.length * 8 - 8, 20, y)
-  doc.line(190, y - weatherData.length * 8 - 8, 190, y)
-
-  // === FOOTER ===
-  y = 270
-
-  doc.setDrawColor(...borderGray)
-  doc.setLineWidth(0.3)
-  doc.line(20, y, 190, y)
-
-  y += 6
-
-  doc.setTextColor(...textGray)
-  doc.setFontSize(8)
-  doc.setFont('helvetica', 'normal')
-  doc.text('Data source: NASA POWER API', 20, y)
-
-  doc.text(`Page 1/1`, 190, y, { align: 'right' })
-
-  // Sauvegarde
-  const locationForFile = props.location?.name || props.location?.display_name || 'location'
-  const fileName = `weather_report_${d.toISOString().split('T')[0]}_${locationForFile.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`
-  doc.save(fileName)
-}
-
-function resetView() {
-  emit('reset-view') // si tu veux aussi réinitialiser quelque chose dans le parent
-}
-
-// Analyse du dashboard pour ux
 const weatherSummary = computed(() => {
   const t = Number(temperature.value)
   const h = Number(humidity.value)
   const w = Number(wind.value)
   const r = Number(rain.value)
-
-  if (isNaN(t) || isNaN(h) || isNaN(w)) return "Les conditions sont en cours d’analyse..."
+  if (isNaN(t) || isNaN(h) || isNaN(w)) return "Analyse en cours..."
 
   let summary = ""
-  let icon = "🌤️"
+  if (t < 0) summary += " Froid intense"
+  else if (t < 10) summary += "Temps froid"
+  else if (t < 20) summary += "Temps frais"
+  else if (t < 28) summary += "Agréable"
+  else summary += "Chaleur marquée"
 
-  // ---- Température ----
-  if (t < 0) {
-    summary += "Froid intense"
-  } else if (t < 10) {
-    summary += " Temps froid"
-  } else if (t < 20) {
-    summary += " Température fraîche"
-  } else if (t < 28) {
-    summary += " Température agréable"
-  } else {
-    summary += " Chaleur marquée"
-  }
+  if (r > 5) summary += ", risque de pluie"
+  if (h > 80) summary += ", humidité élevée"
+  if (w > 10) summary += ", vent sensible"
 
-  // ---- Humidité ----
-  if (h > 80) {
-    summary += " avec une forte humidité"
-  } else if (h > 60) {
-    summary += " et un air légèrement humide"
-  } else if (h < 30) {
-    summary += " et un air sec"
-  }
-
-  // ---- Vent ----
-  if (w > 10) {
-    summary += ". 💨 Vent fort — prudence à l’extérieur"
-  } else if (w > 5) {
-    summary += ".  Légère brise"
-  } else {
-    summary += ".  Conditions calmes"
-  }
-
-  // ---- Précipitations ----
-  if (r > 5) {
-    summary += ".  Risque de pluie notable."
-    icon = "☔"
-  } else if (r > 1) {
-    summary += ".  Quelques averses possibles."
-  }
-
-  return summary
+  return summary + "."
 })
 
-</script>
+const activitySuggestion = computed(() => {
+  const t = Number(temperature.value)
+  const r = Number(rain.value)
+  const w = Number(wind.value)
+  const h = Number(humidity.value)
 
+  if (r > 5) {
+    return {
+      title: "Journée pluvieuse",
+      activity: "Idéale pour rester au chaud — film, lecture ou détente.",
+      tips: "Pense à ton parapluie",
+      preparations: ["Parapluie ou imperméable", "Chaussures étanches", "Boisson chaude", "Éviter les trajets longs"]
+    }
+  }
+  if (t <= 0) {
+    return {
+      title: "Temps froid",
+      activity: "Ski, patin, ou soirée cocooning à la maison.",
+      tips: "Habille-toi chaudement",
+      preparations: ["Gants et bonnet", "S'assure d'avoir des vêtements chauds", "Surveiller les routes glacées"]
+    }
+  }
+  if (t > 25 && r < 2) {
+    return {
+      title: "Belle journée",
+      activity: "Parfaite pour une sortie nature ou un BBQ.",
+      tips: "Pense à la crème solaire ",
+      preparations: ["Crème solaire ", "Bouteille d’eau", "Lunettes de soleil", "Vêtements légers"]
+    }
+  }
+  if (w > 25) {
+    return {
+      title: " Vent fort",
+      activity: "Privilégie les activités intérieures.",
+      tips: "Évite les balades en vélo",
+      preparations: ["Veste coupe-vent", "Bien attacher les objets dehors", "Reporter les sorties en altitude"]
+    }
+  }
+  return {
+    title: " Météo douce",
+    activity: "Idéale pour marcher ou flâner en ville.",
+    tips: "Profite du plein air",
+    preparations: ["Veste légère", "Chaussures confortables", "Planifier une sortie tranquille"]
+  }
+})
+
+function generatePDF() {
+  const doc = new jsPDF()
+  const d = new Date(props.selectedDate)
+
+  const primary = [243, 244, 246]        // texte principal (gray-100)
+  const accent = [156, 163, 175]         // gris subtil (gray-400)
+  const background = [0, 0, 0]           // fond principal noir
+  const backgroundSecondary = [17, 24, 39] // gray-900
+  const border = [31, 41, 55]            // gray-800
+  const borderLight = [55, 65, 81]       // gray-700
+  const textGray = [209, 213, 219]       // gray-300
+  const textSubtle = [156, 163, 175]     // gray-400
+
+  doc.setFillColor(...background)
+  doc.rect(0, 0, 210, 297, 'F')
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(22)
+  doc.setTextColor(...primary)
+  doc.text("NASA Weather Report", 20, 22)
+
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(10)
+  doc.setTextColor(...textSubtle)
+  doc.text(
+    `Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`,
+    20,
+    29
+  )
+
+  doc.setDrawColor(...border)
+  doc.setLineWidth(0.4)
+  doc.line(20, 33, 190, 33)
+
+  let y = 45
+  doc.setTextColor(...textGray)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(13)
+  doc.text("General Information", 20, y)
+
+  y += 3
+  doc.setDrawColor(...borderLight)
+  doc.setLineWidth(1)
+  doc.line(20, y, 75, y)
+
+  y += 10
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(11)
+  doc.setTextColor(...primary)
+  doc.text(`Location:`, 20, y)
+  doc.setFont('helvetica', 'bold')
+  doc.text(`${displayName.value}`, 60, y)
+
+  y += 7
+  doc.setFont('helvetica', 'normal')
+  doc.text(`Date:`, 20, y)
+  doc.setFont('helvetica', 'bold')
+  doc.text(
+    `${d.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+    60,
+    y
+  )
+
+  y += 10
+  doc.setDrawColor(...borderLight)
+  doc.line(20, y, 190, y)
+
+  y += 10
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...textGray)
+  doc.setFontSize(13)
+  doc.text("Weather Summary", 20, y)
+
+  y += 3
+  doc.setDrawColor(...borderLight)
+  doc.setLineWidth(1)
+  doc.line(20, y, 85, y)
+
+  y += 10
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(10)
+  doc.setTextColor(...textSubtle)
+  const summary = doc.splitTextToSize(weatherSummary.value, 170)
+  doc.text(summary, 20, y)
+
+  // Bloc data météo
+  y += 20
+  const weatherData = [
+    ["Average Temp", `${temperature.value} °C`],
+    ["Min / Max", `${tMin.value} °C / ${tMax.value} °C`],
+    ["Humidity", `${humidity.value} %`],
+    ["Wind Speed", `${wind.value} m/s`],
+    ["Pressure", `${pressure.value} kPa`],
+    ["Precipitation", `${rain.value} mm`],
+  ]
+
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...textGray)
+  doc.text("Key Weather Data", 20, y)
+  y += 5
+
+  doc.setDrawColor(...border)
+  doc.setFillColor(...backgroundSecondary)
+  doc.rect(20, y, 170, 45, 'F')
+
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(...primary)
+  let ty = y + 9
+  weatherData.forEach(([label, value]) => {
+    doc.text(label, 25, ty)
+    doc.text(value, 185, ty, { align: 'right' })
+    ty += 7
+  })
+
+  y = ty + 12
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(13)
+  doc.setTextColor(...textGray)
+  doc.text("Suggested Activity", 20, y)
+
+  y += 3
+  doc.setDrawColor(...borderLight)
+  doc.line(20, y, 80, y)
+
+  y += 10
+  doc.setTextColor(...primary)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(12)
+  doc.text(activitySuggestion.value.title, 20, y)
+
+  y += 8
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(10)
+  doc.setTextColor(...textGray)
+  doc.text(doc.splitTextToSize(activitySuggestion.value.activity, 170), 20, y)
+
+  y += 10
+  doc.setFont('helvetica', 'italic')
+  doc.setFontSize(9)
+  doc.setTextColor(...textSubtle)
+  doc.text(activitySuggestion.value.tips, 20, y)
+
+  y += 10
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...textGray)
+  doc.setFontSize(11)
+  doc.text("Preparations Checklist:", 20, y)
+
+  y += 6
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(9)
+  doc.setTextColor(...textSubtle)
+  activitySuggestion.value.preparations.forEach((p) => {
+    doc.text(`• ${p}`, 25, y)
+    y += 5
+  })
+
+  y = 275
+  doc.setDrawColor(...border)
+  doc.line(20, y, 190, y)
+  y += 6
+
+  doc.setTextColor(...textSubtle)
+  doc.setFontSize(8)
+  doc.text("Data: NASA POWER, NLDAS2, Open-Meteo", 20, y)
+  doc.text("© 2025 SpaceApps – fait par Les GOLMONS :)", 190, y, { align: "right" })
+
+  const filename = `weather_report_${d.toISOString().split("T")[0]}_${displayName.value.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`
+  doc.save(filename)
+}
+
+
+function resetView() {
+  emit('reset-view')
+}
+</script>

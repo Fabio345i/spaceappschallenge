@@ -137,7 +137,7 @@ function handleDateSelected(date) {
     
     class="relative transform  w-full  px-4 z-50"
   />
-    <GlobeCesium :target="target"     class="relative w-6/5 h-5/5  m-auto max-h-screen" 
+    <GlobeCesium :target="target" class="relative w-6/5 h-5/5  m-auto max-h-screen" 
  />
 
 </div>

@@ -166,11 +166,11 @@ function startTutorial() {
               }
             },
             {
-              element: '.px-4.py-2',
+              element: '.grid.grid-cols-4.gap-3.flex-1',
               popover: {
-                title: 'Prediction Complete!',
-                description: 'Here you can see the hourly precipitation predictions for Berlin.',
-                side: 'bottom',
+                title: 'Hourly Forecast',
+                description: 'Detailed hourly precipitation data to help you plan your day effectively.',
+                side: 'left',
                 align: 'start'
               }
             },

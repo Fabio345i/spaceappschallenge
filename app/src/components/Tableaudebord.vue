@@ -13,6 +13,13 @@
           {{ props.location?.lat.toFixed(2) }}° / {{ props.location?.lon.toFixed(2) }}°
         </p>
       </div>
+<!-- Résumé météo -->
+<div class="mt-6 bg-gray-800/40 border border-gray-700 rounded-lg p-4 text-center">
+  <p class="text-sm font-medium text-white mb-1">Analyse rapide</p>
+  <p class="text-gray-300 text-sm leading-relaxed">
+    {{ weatherSummary }}
+  </p>
+</div>
 
       <!-- Stats -->
       <div class="grid grid-cols-2 gap-3">
@@ -377,4 +384,60 @@ function generatePDF() {
 function resetView() {
   emit('reset-view')
 }
+
+// Analyse du dashboard pour ux
+const weatherSummary = computed(() => {
+  const t = Number(temperature.value)
+  const h = Number(humidity.value)
+  const w = Number(wind.value)
+  const r = Number(rain.value)
+
+  if (isNaN(t) || isNaN(h) || isNaN(w)) return "Les conditions sont en cours d’analyse..."
+
+  let summary = ""
+  let icon = "🌤️"
+
+  // ---- Température ----
+  if (t < 0) {
+    summary += "Froid intense"
+  } else if (t < 10) {
+    summary += " Temps froid"
+  } else if (t < 20) {
+    summary += " Température fraîche"
+  } else if (t < 28) {
+    summary += " Température agréable"
+  } else {
+    summary += " Chaleur marquée"
+  }
+
+  // ---- Humidité ----
+  if (h > 80) {
+    summary += " avec une forte humidité"
+  } else if (h > 60) {
+    summary += " et un air légèrement humide"
+  } else if (h < 30) {
+    summary += " et un air sec"
+  }
+
+  // ---- Vent ----
+  if (w > 10) {
+    summary += ". 💨 Vent fort — prudence à l’extérieur"
+  } else if (w > 5) {
+    summary += ".  Légère brise"
+  } else {
+    summary += ".  Conditions calmes"
+  }
+
+  // ---- Précipitations ----
+  if (r > 5) {
+    summary += ".  Risque de pluie notable."
+    icon = "☔"
+  } else if (r > 1) {
+    summary += ".  Quelques averses possibles."
+  }
+
+  return summary
+})
+
 </script>
+

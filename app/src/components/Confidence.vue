@@ -6,7 +6,7 @@ const props = defineProps({
   confiance: { type: Number, required: true }
 })
 
-const couleurConfiance = computed(() => {
+const confidenceColor = computed(() => {
   if (props.confiance > 75) return '#22c55e'
   if (props.confiance > 50) return '#facc15'
   return '#ef4444'
@@ -17,18 +17,18 @@ const couleurConfiance = computed(() => {
   <div class="absolute inset-0 opacity-10 pointer-events-none"></div>
 
   <p class="text-xs font-semibold tracking-wide uppercase mb-1 text-gray-300">
-    {{ props.isFuturePrediction ? 'Confiance de la prédiction' : 'Données confirmées' }}
+    {{ props.isFuturePrediction ? 'Prediction Confidence' : 'Confirmed Data' }}
   </p>
 
   <div class="text-2xl mb-3" :class="props.isFuturePrediction ? '' : 'text-green-400'">
     {{ props.isFuturePrediction ? props.confiance + '%' : '100%' }}
   </div>
 
-  <div class="w-full bg-[#101828] rounded-full h-4 ">
+  <div class="w-full bg-[#101828] rounded-full h-4">
     <div
       :style="{
         width: props.confiance + '%',
-        background: couleurConfiance
+        background: confidenceColor
       }"
       class="h-4 rounded-full transition-all duration-700 shadow-[0_0_10px_var(--tw-shadow-color)]"
     ></div>
@@ -36,7 +36,7 @@ const couleurConfiance = computed(() => {
 
   <p class="mt-2 text-xs text-gray-400">
     {{ props.isFuturePrediction
-      ? 'Plus la date est éloignée, moins la précision est garantie'
-      : 'Ces données proviennent de l’historique réel' }}
+      ? 'The further the date, the lower the guaranteed accuracy'
+      : 'This data comes from real historical records' }}
   </p>
 </template>

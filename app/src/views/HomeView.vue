@@ -7,11 +7,14 @@ import Calendar from '@/components/Calendar.vue'
 import HourlyForecast from '@/components/HourlyForecast.vue'
 import TutorialDriver from '@/components/tutorial/TutorialDriver.vue'
 const tutorial = ref(null)
+import router from '@/router'
 
 const target = ref(null)
 const mobileMenuOpen = ref(false)
 const favoritesOpen = ref(false)
 const resetTrigger = ref(0)
+
+const isAuthenticated = ref(!!localStorage.getItem("token"))
 
 const favorites = ref([
   { name: 'New York, USA', lat: 40.7128, lon: -74.0060 },
@@ -19,9 +22,23 @@ const favorites = ref([
   { name: 'Tokyo, Japan', lat: 35.6762, lon: 139.6503 }
 ])
 
+function toggleFavorites() {
+  if (!isAuthenticated.value) {
+    router.push('/login')
+    return
+  }
+  favoritesOpen.value = !favoritesOpen.value
+}
+
 function selectFavorite(fav) {
   target.value = { lat: fav.lat, lon: fav.lon }
   favoritesOpen.value = false
+}
+
+function logout() {
+  localStorage.removeItem("token")
+  isAuthenticated.value = false
+  router.push("home")
 }
 
 const selectedDate = ref(new Date())
@@ -63,7 +80,7 @@ function handleResetView() {
             
             <div class="relative">
               <button 
-                @click="favoritesOpen = !favoritesOpen"
+                @click="toggleFavorites"
                 class="text-gray-400 hover:text-white transition-colors flex items-center space-x-2 text-sm font-medium"
               >
                 <span>Favorites</span>
@@ -96,6 +113,14 @@ function handleResetView() {
             <a href="#" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
               About
             </a>
+
+            <button 
+              v-if="isAuthenticated" 
+              @click="logout" 
+              class="text-gray-400 hover:text-white transition-colors text-sm font-medium"
+            >
+              Disconnect
+            </button>
           </div>
 
           <button

@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, EmailStr
 from typing import Optional
 from bson import ObjectId
-from models.model import PyObjectId
+from api.models import PyObjectId
 
 class UserModel(BaseModel):
     id: Optional[PyObjectId] = Field(alias="_id")

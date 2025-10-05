@@ -1,0 +1,70 @@
+name: Build & Push Docker Images (PROD tags)
+
+on:
+  push:
+    tags:
+      - 'PROD*'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    env:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set TAG variable
+        id: vars
+        run: echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build backend image
+        run: |
+          docker build -t $DOCKER_USERNAME/backend:${{ env.TAG }} ./api
+          docker tag $DOCKER_USERNAME/backend:${{ env.TAG }} $DOCKER_USERNAME/backend:latest
+
+      - name: Push backend image
+        run: |
+          docker push $DOCKER_USERNAME/backend:${{ env.TAG }}
+          docker push $DOCKER_USERNAME/backend:latest
+
+      - name: Build frontend image
+        run: |
+          docker build -t $DOCKER_USERNAME/frontend:${{ env.TAG }} ./app
+          docker tag $DOCKER_USERNAME/frontend:${{ env.TAG }} $DOCKER_USERNAME/frontend:latest
+
+      - name: Push frontend image
+        run: |
+          docker push $DOCKER_USERNAME/frontend:${{ env.TAG }}
+          docker push $DOCKER_USERNAME/frontend:latest
+
+      - name: Deploy to VPS
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: SSH and update VPS containers
+        run: |
+          ssh -o StrictHostKeyChecking=no root@167.160.189.194 << EOF
+            echo "Pulling latest images..."
+            docker pull $DOCKER_USERNAME/backend:latest
+            docker pull $DOCKER_USERNAME/frontend:latest
+
+            echo "Stopping and removing old containers..."
+            docker rm -f backend || true
+            docker rm -f frontend || true
+
+            echo "Starting new containers..."
+            docker run -d --name backend -p 8000:8000 $DOCKER_USERNAME/backend:latest
+            docker run -d --name frontend -p 80:80 $DOCKER_USERNAME/frontend:latest
+
+            echo "Deployment complete!"
+          EOF

@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-from api.models import SubsetRequest
-from api.utils.gesdisc_api import submit_and_wait, nc_to_json
+from models import SubsetRequest
+from utils.gesdisc_api import submit_and_wait, nc_to_json
 
 router = APIRouter()
 

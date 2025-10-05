@@ -154,6 +154,59 @@ function startTutorial() {
 
       localStorage.setItem('nasa-weather-tutorial-seen', 'true')
       if (driverObj.value) driverObj.value.destroy()
+
+      setTimeout(() => {
+        const finalDriver = driver({
+          showProgress: false,
+          steps: [
+            {
+              popover: {
+                title: 'Prediction Complete!',
+                description: 'Your weather forecast has been generated. Explore the results and discover our advanced prediction capabilities.',
+              }
+            },
+            {
+              element: '.px-4.py-2',
+              popover: {
+                title: 'Prediction Complete!',
+                description: 'Here you can see the hourly precipitation predictions for Berlin.',
+                side: 'bottom',
+                align: 'start'
+              }
+            },
+            {
+              element: '.bg-gray-900.border.border-gray-800.rounded-lg.p-4',
+              popover: {
+                title: 'Hourly Forecast',
+                description: 'Detailed hourly precipitation data to help you plan your day effectively.',
+                side: 'left',
+                align: 'start'
+              }
+            },
+            {
+              element: '.relative.flex.items-center.gap-2.px-5.py-2\\.5',
+              popover: {
+                title: 'Download Report',
+                description: 'Generate and download a comprehensive PDF report with all weather predictions and recommendations.',
+                side: 'top',
+                align: 'start'
+              }
+            },
+            {
+              popover: {
+                title: 'There you go!',
+                description: 'You are all set to explore WeatherMellon. Feel free to restart this tutorial anytime from the tutorial navbar menu.',
+              }
+            }
+          ],
+          doneBtnText: 'Got it',
+          allowClose: true,
+          onDestroyStarted: () => {
+            if (finalDriver) finalDriver.destroy()
+          }
+        })
+        finalDriver.drive()
+      }, 3000)
     },
 
     onNextClick: (element, step, options) => {

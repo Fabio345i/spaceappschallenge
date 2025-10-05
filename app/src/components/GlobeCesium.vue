@@ -12,22 +12,34 @@ import {
   ScreenSpaceEventHandler
 } from 'cesium'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
+import Popup from './Popup.vue'
 
 const props = defineProps({
   target: {
     type: Object,
     default: null
+  },
+  resetTrigger: {
+    type: Number,
+    default: 0
   }
 })
 
 const cesiumContainer = ref(null)
+const globeWrapper = ref(null)
 let viewer = null
 let cityDataSource = null
 let markerEntity = null
-const showPopup = ref(false);
-const popupTitle = ref('');
-const climatData = ref(null);
+const showPopup = ref(false)
+const popupTitle = ref('')
+const climatData = ref(null)
+const recommandation = ref('')
+const popupPosition = ref({ top: '50%', left: '50%' })
 
+// Dimensions approximatives du popup (ajuste selon ton popup réel)
+const POPUP_WIDTH = 350
+const POPUP_HEIGHT = 450
+const PADDING = 10
 
 async function fetchOsmBoundary(osmId) {
   try {
@@ -36,20 +48,29 @@ async function fetchOsmBoundary(osmId) {
     if (!res.ok) throw new Error('OSM Boundaries error')
     return await res.json()
   } catch (e) {
-    console.warn('Impossible de charger les limites OSM Boundaries', e)
+    console.warn('Failed to load OSM boundaries', e)
     return null
   }
 }
 
+function resetCameraView() {
+  if (viewer) {
+    viewer.camera.flyTo({
+      destination: Cartesian3.fromDegrees(-95, 50, 9000000),
+      duration: 1.5
+    })
+  }
+}
+
 onMounted(() => {
-   viewer = new Viewer(cesiumContainer.value, {
+  viewer = new Viewer(cesiumContainer.value, {
     baseLayerPicker: false,
     geocoder: false,
     timeline: false,
     animation: false,
     terrainProvider: new EllipsoidTerrainProvider()
   })
-  
+
   viewer.imageryLayers.removeAll()
   viewer.imageryLayers.addImageryProvider(
     new UrlTemplateImageryProvider({
@@ -63,25 +84,55 @@ onMounted(() => {
   })
 
   const handler = new ScreenSpaceEventHandler(viewer.scene.canvas)
-  handler.setInputAction((mouvement) => {
-    // Attribuer les données
-      popupTitle.value = "Nom de la montagne";
-      
-      climatData.value = {
-        altitude_base: 265,
-        altitude_sommet: 875,
-        temperature_base: 15,
-        humiditer_base: 65,
-        vent_base: 12,
-        precipitation_base: 0,
-        temperature_sommet: 8,
-        vent_sommet: 8,
-        precipitation_sommet: 2,
-      }
+handler.setInputAction((movement) => {
+  const wrapper = globeWrapper.value
+  if (!wrapper) return
 
-      showPopup.value = true
-    }, ScreenSpaceEventType.LEFT_CLICK);
+  const wrapperRect = wrapper.getBoundingClientRect()
+
+  const header  = document.querySelector('header')
+  const sidenav = document.querySelector('.sidenav') || document.querySelector('aside')
+  const headerBottom = header ? header.getBoundingClientRect().bottom : 0
+  const sideRight    = sidenav ? sidenav.getBoundingClientRect().right : 0
+
+  // Position du clic dans le viewport
+  const clickViewportX = movement.position.x
+  const clickViewportY = movement.position.y
+
+  // Conversion : viewport -> coordonnées locales du wrapper
+  let popupX = clickViewportX - wrapperRect.left - (POPUP_WIDTH / 2)
+  let popupY = clickViewportY - wrapperRect.top - POPUP_HEIGHT - 20
+
+  const minX = sideRight - wrapperRect.left + PADDING
+  const minY = headerBottom - wrapperRect.top + PADDING
+  const maxX = wrapperRect.width  - POPUP_WIDTH  - PADDING
+  const maxY = wrapperRect.height - POPUP_HEIGHT - PADDING
+
+  // Si "au-dessus" sort en haut => on met en dessous
+  if (popupY < minY) popupY = clickViewportY - wrapperRect.top + 20
+
+  // Clamp final
+  popupX = Math.min(Math.max(popupX, minX), maxX)
+  popupY = Math.min(Math.max(popupY, minY), maxY)
+
+  popupPosition.value = {
+    top:  `${popupY}px`,
+    left: `${popupX}px`
+  }
+
+  popupTitle.value = "Nom de la montagne"
+  climatData.value = { /* ... */ }
+  showPopup.value = true
+}, ScreenSpaceEventType.LEFT_CLICK)
+
 })
+
+watch(
+  () => props.resetTrigger,
+  () => {
+    resetCameraView()
+  }
+)
 
 watch(
   () => props.target,
@@ -89,7 +140,7 @@ watch(
     if (!val || !viewer) return
 
     if (cityDataSource) {
-      console.log(cityDataSource);
+      console.log(cityDataSource)
       viewer.dataSources.remove(cityDataSource, true)
       cityDataSource = null
     }
@@ -102,8 +153,7 @@ watch(
 
     if (val.geojson) {
       geojsonToLoad = val.geojson
-    }
-    else if (val.osm_id) {
+    } else if (val.osm_id) {
       geojsonToLoad = await fetchOsmBoundary(val.osm_id)
     }
 
@@ -152,26 +202,32 @@ watch(
   },
   { deep: true }
 )
-
-
 </script>
 
 <template>
-  <InfoPopup
-    :visible="showPopup"
-    :title="popupTitle"
-    :climatData="climatData"
-    @close="showPopup = false"
-  />
-
-  <div class="globe-wrapper">
+  <div ref="globeWrapper" class="globe-wrapper">
     <div ref="cesiumContainer" class="globe"></div>
+    
+    <!-- Popup à l'intérieur du wrapper avec position calculée -->
+    <div v-if="showPopup" class="popup-container" :style="popupPosition">
+      <Popup
+        :visible="showPopup"
+        :title="popupTitle"
+        :climatData="climatData"
+        @close="showPopup = false"
+      />
+    </div>
   </div>
 </template>
 
-
-
 <style scoped>
+.globe-wrapper {
+  position: relative;
+  width: 100%;
+  height: 60%;
+  overflow: hidden;
+  z-index: 1;
+}
 
 .globe {
   width: 100%;
@@ -180,9 +236,12 @@ watch(
   overflow: hidden;
   border: 1px solid #374151;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+   z-index: 1;
+}
+
+.popup-container {
+  position: absolute;
+  z-index: 100;
+  pointer-events: auto;
 }
 </style>
-
-
-
-

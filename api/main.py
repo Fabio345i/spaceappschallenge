@@ -1,29 +1,51 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from routes.auth.login import router as login_router
-from routes.auth.register import router as register_router
-from routes.merra2 import router as merra2_router
-from routes.algo import router as algo_router
-from db.session import connect_db, disconnect_db
+# from api.routes.auth.login import router as login_router
+# from api.routes.auth.register import router as register_router
+from api.routes.algo import router as algo_router
+from api.routes.weather import rainfall
+from api.db import session
+from dotenv import load_dotenv
+# from api.routes.auth.login import router as login_router
+# from api.routes.auth.register import router as register_router
+from api.routes.merra2 import router as merra2_router
+from api.routes.algo import router as algo_router
+from api.db.session import connect_db, disconnect_db
 
 
-client = None
-db = None
+
+from fastapi.middleware.cors import CORSMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await connect_db()
+    await session.connect_db()
     yield  
-    await disconnect_db()
+    await session.disconnect_db()
 
 app = FastAPI(lifespan=lifespan)
+
+origins = [
+    "http://localhost:5173",  # Domaine de dev
+    "http://167.160.189.194",    # Domaine de prod
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 def read_root():
     return {"message": "Hello, FastAPI!"}
 
-# Routers
-app.include_router(register_router, prefix="/register", tags=["Login"])
-app.include_router(login_router, prefix="/login", tags=["Login"])
+# app.include_router(register_router, prefix="/auth", tags=["Auth"])
+# app.include_router(login_router, prefix="/auth", tags=["Auth"])
+app.include_router(algo_router, prefix="/algo", tags=["Algo"])
+app.include_router(rainfall.router, prefix="/weather", tags=["Weather"])
+# app.include_router(register_router, prefix="/register", tags=["Login"])
+# app.include_router(login_router, prefix="/login", tags=["Login"])
 app.include_router(algo_router, prefix="/algo", tags=["Algo"])
 app.include_router(merra2_router, prefix="/merra2", tags=["MERRA-2"])

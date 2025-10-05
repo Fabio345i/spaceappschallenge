@@ -230,18 +230,7 @@ function handleResetView() {
           </div>
         </div>
 
-        <footer class="border-t border-gray-800 bg-gray-950 px-6 py-4">
-          <div class="flex items-center justify-between text-xs text-gray-600">
-            <div class="flex items-center space-x-6">
-              <span>Satellite: Terra MODIS</span>
-              <span>Resolution: 1km</span>
-              <span>Last Update: 2 hours ago</span>
-            </div>
-            <div>
-              <span>© 2025 NASA Earth Observations</span>
-            </div>
-          </div>
-        </footer>
+  
       </div>
     </main>
   </div>

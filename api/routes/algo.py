@@ -93,7 +93,7 @@ async def analyse_day(
     Hmean = sum(H) / len(H) if H else None
     Vmean = sum(V) / len(V) if V else None
     Pmean = sum(P) / len(P) if P else None
-    Ppluie = (sum(1 for r in R if r and r > 0) / len(R) * 100) if R else None
+
     dP_mean = sum(deltaP)/len(deltaP) if deltaP else None
 
     Tmin_adj = Tmin_base
@@ -106,21 +106,6 @@ async def analyse_day(
     if Vmean is not None and Vmean > 10:
         Tmin_adj += 0.5
 
-    if Ppluie is not None:
-        Ppluie_adj = Ppluie
-        if Hmean is not None:
-            if Hmean > 70: Ppluie_adj += 20
-            elif Hmean < 40: Ppluie_adj -= 20
-        if Vmean is not None:
-            if Vmean > 25: Ppluie_adj += 15
-            elif Vmean < 10: Ppluie_adj -= 10
-        if dP_mean is not None:
-            if dP_mean < -5: Ppluie_adj += 20
-            elif dP_mean > 5: Ppluie_adj -= 10
-        Ppluie_adj = max(0, min(100, Ppluie_adj))
-    else:
-        Ppluie_adj = None
-
     return {
         "historique_annees": len(T),
         "T_moyenne": round(Tbase, 2),
@@ -132,8 +117,7 @@ async def analyse_day(
         "vent_moyen_m_s": round(Vmean, 2) if Vmean else None,
         "pression_moy_kPa": round(Pmean, 2) if Pmean else None,
         "variation_pression_moy_kPa": round(dP_mean, 2) if dP_mean else None,
-        "pluie_base_%": round(Ppluie, 1) if Ppluie else None,
-        "pluie_apres_ajustements_%": round(Ppluie_adj, 1) if Ppluie_adj else None,
+
         "note": "Algorithme simplifié POWER (sans nuages/omega/T850/skin temp). ΔP basé sur jour-1 POWER."
     }
 
@@ -149,7 +133,7 @@ def predict_weather(
     month: int = Query(..., ge=1, le=12),
     base_years: int = Query(20),
     future_year: int = Query(...),
-    window_days: int = Query(7)
+    window_days: int = Query(3)
 ):
     current_year = datetime.utcnow().year
     start_year = current_year - base_years
@@ -200,7 +184,7 @@ def predict_weather(
     u_vals = [u[d] for d in ref_dates if d in u]
     v_vals = [v[d] for d in ref_dates if d in v]
     ps_vals = [ps[d] for d in ref_dates if d in ps]
-    precip_vals = [precip[d] for d in ref_dates if d in precip]
+
 
     if not t2m_vals:
         raise HTTPException(404, "Pas de données disponibles pour ce point/date")
@@ -213,8 +197,7 @@ def predict_weather(
     V = sum(v_vals) / len(v_vals) if v_vals else None
     P = sum(ps_vals) / len(ps_vals) if ps_vals else None
 
-    nb_pluvieux = sum(1 for v in precip_vals if v and v > 0.2)
-    Ppluie = round(100 * nb_pluvieux / len(precip_vals), 1) if precip_vals else 0
+
 
     Tmin_adj = Tmin
     Tmax_adj = Tmax
@@ -225,8 +208,6 @@ def predict_weather(
     if U is not None and V is not None:
         vent = (U ** 2 + V ** 2) ** 0.5
         if vent > 10: Tmin_adj += 0.5
-    if P and P < 98:
-        Ppluie += 20
 
     return {
         "future_year": future_year,
@@ -245,7 +226,4 @@ def predict_weather(
         "humidite_moyenne": RH,
         "vent_moyen_m_s": vent,
         "pression_moy_kPa": P,
-        "jours_pluvieux": nb_pluvieux,
-        "pluie_base_%": round(100 * nb_pluvieux / len(precip_vals), 1) if precip_vals else 0,
-        "pluie_apres_ajustements_%": max(0, min(100, Ppluie))
     }

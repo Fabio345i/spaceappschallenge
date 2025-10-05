@@ -1,11 +1,11 @@
 <template>
   <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
     <h2 class="text-sm font-semibold text-white mb-4 uppercase tracking-wide">
-      🌍 Current Conditions
+      Current Conditions
     </h2>
 
     <div v-if="dataLoaded">
-      <!-- 📍 Localisation -->
+      <!--Localisation -->
       <div class="mb-4 pb-3 border-b border-gray-800">
         <p class="text-xs text-gray-400 mb-0.5">Location</p>
         <p class="text-sm font-medium text-white truncate">{{ displayName }}</p>
@@ -14,7 +14,7 @@
         </p>
       </div>
 
-      <!--Résumé météo -->
+      <!-- météo -->
       <div class="mt-6 bg-gray-800/40 border border-gray-700 rounded-lg p-5 m-2 text-center">
         <p class="text-sm font-medium text-white mb-1">Analyse rapide</p>
         <p class="text-gray-300 text-sm leading-relaxed">
@@ -54,8 +54,14 @@
       <div class="flex gap-2 mt-6">
         <button
           @click="generatePDF()"
-          class="flex items-center gap-2 py-2 px-3 bg-blue-700 hover:bg-blue-600 border border-blue-600 rounded-lg text-white text-sm font-medium transition-colors duration-200 shadow-md"
-        >
+ class="relative flex items-center gap-2 px-5 py-2.5
+         rounded-xl font-semibold text-gray-100
+         border border-gray-700
+          from-gray-800 via-gray-900 to-black
+         hover:from-blue-700 hover:via-blue-800 hover:to-gray-900
+         hover:border-gray-600 hover:shadow-[0_0_15px_rgba(59,130,246,0.4)]
+         active:scale-95 transition-all duration-300 ease-out
+         overflow-hidden">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
@@ -66,7 +72,10 @@
 
         <button
           @click="resetView"
-          class="py-2 px-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg text-gray-300 hover:text-white text-sm font-medium transition-colors duration-200"
+          class="py-2 px-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg text-gray-300
+           hover:text-white text-sm font-medium transition-colors duration-200 hover:shadow-[0_0_15px_rgba(59,130,246,0.4)]
+         active:scale-95 transition-all duration-300 ease-out
+         overflow-hidden"
         >
           Reset View
         </button>
@@ -153,7 +162,6 @@ async function fetchWeather(loc, date) {
   }
 }
 
-// === 💡 Résumé météo intelligent ===
 const weatherSummary = computed(() => {
   const t = Number(temperature.value)
   const h = Number(humidity.value)
@@ -221,7 +229,6 @@ const activitySuggestion = computed(() => {
   }
 })
 
-// === 📄 PDF Export avec activités ===
 function generatePDF() {
   const doc = new jsPDF()
   const d = new Date(props.selectedDate)

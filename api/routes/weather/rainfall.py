@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query, HTTPException
 import requests
 
-router = APIRouter(prefix="/weather", tags=["Weather"])
+router = APIRouter()
 
 @router.get("/rainfall")
 def get_rainfall(

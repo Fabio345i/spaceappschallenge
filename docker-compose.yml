@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   api:
-    image: yourusername/backend:latest
+    image: fabio345i/backend:latest
     container_name: backend
     ports:
       - "8000:8000"
@@ -11,7 +11,7 @@ services:
     restart: always
 
   app:
-    image: yourusername/frontend:latest
+    image: fabio345i/frontend:latest
     container_name: frontend
     ports:
       - "80:80"

@@ -18,6 +18,10 @@ const props = defineProps({
   target: {
     type: Object,
     default: null
+  },
+  resetTrigger: {
+    type: Number,
+    default: 0
   }
 })
 
@@ -38,8 +42,17 @@ async function fetchOsmBoundary(osmId) {
     if (!res.ok) throw new Error('OSM Boundaries error')
     return await res.json()
   } catch (e) {
-    console.warn('Impossible de charger les limites OSM Boundaries', e)
+    console.warn('Failed to load OSM boundaries', e)
     return null
+  }
+}
+
+function resetCameraView() {
+  if (viewer) {
+    viewer.camera.flyTo({
+      destination: Cartesian3.fromDegrees(-95, 50, 9000000),
+      duration: 1.5
+    })
   }
 }
 
@@ -51,7 +64,7 @@ onMounted(() => {
     animation: false,
     terrainProvider: new EllipsoidTerrainProvider()
   })
-  
+
   viewer.imageryLayers.removeAll()
   viewer.imageryLayers.addImageryProvider(
     new UrlTemplateImageryProvider({
@@ -63,26 +76,14 @@ onMounted(() => {
   viewer.camera.flyTo({
     destination: Cartesian3.fromDegrees(-95, 50, 9000000)
   })
-
-  const handler = new ScreenSpaceEventHandler(viewer.scene.canvas)
-  handler.setInputAction((mouvement) => {
-    // Attribuer les données
-      popupTitle.value = "Nom de la montagne";
-      
-      climatData.value = {
-        altitude_base: 265,
-        altitude_sommet: 875,
-        temperature_base: 15,
-        humiditer_base: 65,
-        vent_base: 12,
-        precipitation_base: 0,
-        temperature_sommet: 8,
-        vent_sommet: 8,
-        precipitation_sommet: 2,
-      }
-      showPopup.value = true
-    }, ScreenSpaceEventType.LEFT_CLICK);
 })
+
+watch(
+  () => props.resetTrigger,
+  () => {
+    resetCameraView()
+  }
+)
 
 watch(
   () => props.target,
@@ -90,7 +91,6 @@ watch(
     if (!val || !viewer) return
 
     if (cityDataSource) {
-      console.log(cityDataSource);
       viewer.dataSources.remove(cityDataSource, true)
       cityDataSource = null
     }
@@ -103,8 +103,7 @@ watch(
 
     if (val.geojson) {
       geojsonToLoad = val.geojson
-    }
-    else if (val.osm_id) {
+    } else if (val.osm_id) {
       geojsonToLoad = await fetchOsmBoundary(val.osm_id)
     }
 
@@ -153,44 +152,10 @@ watch(
   },
   { deep: true }
 )
-
-
 </script>
 
 <template>
-  <Popup
-    :visible="showPopup"
-    :title="popupTitle"
-    :climatData="climatData"
-    @close="showPopup = false"
-  />
-
-  <div class="globe-wrapper">
-    <div ref="cesiumContainer" class="globe"></div>
+  <div class="w-full h-full bg-gray-900 border border-gray-800 rounded-md overflow-hidden">
+    <div ref="cesiumContainer" class="w-full h-full"></div>
   </div>
 </template>
-
-
-
-<style scoped>
-.globe-wrapper {
-  position: relative;
-  width: 100%;
-  height: 60%;
-  overflow: visible
-}
-
-.globe {
-  width: 100%;
-  height: 100%;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid #374151;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-}
-
-</style>
-
-
-
-

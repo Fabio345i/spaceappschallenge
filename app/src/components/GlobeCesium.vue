@@ -12,6 +12,7 @@ import {
   ScreenSpaceEventHandler
 } from 'cesium'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
+import Popup from './Popup.vue'
 
 const props = defineProps({
   target: {
@@ -27,6 +28,7 @@ let markerEntity = null
 const showPopup = ref(false);
 const popupTitle = ref('');
 const climatData = ref(null);
+const recommandation = ref('')
 
 
 async function fetchOsmBoundary(osmId) {
@@ -78,7 +80,6 @@ onMounted(() => {
         vent_sommet: 8,
         precipitation_sommet: 2,
       }
-
       showPopup.value = true
     }, ScreenSpaceEventType.LEFT_CLICK);
 })
@@ -157,7 +158,7 @@ watch(
 </script>
 
 <template>
-  <InfoPopup
+  <Popup
     :visible="showPopup"
     :title="popupTitle"
     :climatData="climatData"
@@ -172,6 +173,12 @@ watch(
 
 
 <style scoped>
+.globe-wrapper {
+  position: relative;
+  width: 100%;
+  height: 60%;
+  overflow: visible
+}
 
 .globe {
   width: 100%;
@@ -181,6 +188,7 @@ watch(
   border: 1px solid #374151;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
+
 </style>
 
 

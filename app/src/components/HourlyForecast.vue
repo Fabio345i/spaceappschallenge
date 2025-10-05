@@ -5,82 +5,94 @@
         Hourly Forecast - {{ formattedDate }}
       </h2>
     </div>
-    
-    <div v-if="hourlyData.length" class="flex overflow-x-auto space-x-2 pb-2">
-      <div 
-        v-for="hour in hourlyData" 
+
+    <div v-if="loading" class="text-center py-4 text-gray-400">Chargement des données...</div>
+    <div v-else-if="error" class="text-center text-red-500 py-4">{{ error }}</div>
+
+    <div v-else-if="hourlyData.length" class="flex overflow-x-auto space-x-2 pb-2">
+      <div
+        v-for="hour in hourlyData"
         :key="hour.time"
-        class="flex-shrink-0 w-16 p-2 rounded bg-gray-900 border border-gray-800 text-center hover:border-gray-700"
+        class="flex-shrink-0 w-20 p-2 rounded bg-gray-900 border border-gray-800 text-center hover:border-gray-700"
       >
         <p class="text-xs text-gray-500 mb-1">{{ hour.time }}</p>
         <p class="text-base font-semibold text-white">{{ hour.temp }}°</p>
         <p class="text-xs text-gray-500 mt-1">{{ hour.condition }}</p>
-        <p v-if="hour.rainChance > 0" class="text-xs text-blue-400 mt-1">{{ hour.rainChance }}%</p>
+        <p v-if="hour.rain > 0" class="text-xs text-blue-400 mt-1">{{ hour.rain.toFixed(2) }} mm</p>
       </div>
     </div>
-    
-    <div v-else class="text-center py-4 text-gray-600 text-xs">
-      Loading forecast data...
+
+    <div v-else class="text-center text-gray-500 py-4">
+      Aucune donnée disponible pour cette journée.
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed } from "vue"
+import axios from "axios"
 
 const props = defineProps({
-  selectedDate: {
-    type: Date,
-    required: true
-  },
-  location: {
-    type: String,
-    default: 'Paris, France'
-  }
+  selectedDate: Date,
+  latitude: Number,
+  longitude: Number,
+  location: String,
 })
 
 const hourlyData = ref([])
+const loading = ref(false)
+const error = ref("")
 
 const formattedDate = computed(() => {
-  return props.selectedDate.toLocaleDateString('en-US', {
-    weekday: 'short', 
-    month: 'short',
-    day: 'numeric'
+  return props.selectedDate?.toLocaleDateString("fr-FR", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
   })
 })
 
-const fetchHourlyForecast = async (date, location) => {
-  const data = []
-  const startHour = 8
-  const conditions = [
-    { tempRange: [18, 25], cond: 'Clear' },
-    { tempRange: [15, 22], cond: 'Cloudy' },
-    { tempRange: [10, 16], cond: 'Rain' },
-    { tempRange: [12, 18], cond: 'Overcast' }
-  ]
-  
-  for (let i = 0; i < 16; i++) {
-    const currentCondition = conditions[Math.floor(Math.random() * conditions.length)]
-    const temp = Math.floor(Math.random() * (currentCondition.tempRange[1] - currentCondition.tempRange[0] + 1)) + currentCondition.tempRange[0]
-    
-    data.push({
-      time: `${String((startHour + i) % 24).padStart(2, '0')}:00`,
-      temp: temp,
-      condition: currentCondition.cond,
-      rainChance: currentCondition.cond === 'Rain' ? Math.floor(Math.random() * 50) + 50 : 0
+const fetchHourlyForecast = async () => {
+  if (!props.latitude || !props.longitude || !props.selectedDate) return
+
+  loading.value = true
+  error.value = ""
+  hourlyData.value = []
+
+  try {
+    const date = props.selectedDate.toISOString().split("T")[0]
+    const res = await axios.get(
+      `http://127.0.0.1:8000/weather/rainfall?start_date=${date}&end_date=${date}&latitude=${props.latitude}&longitude=${props.longitude}`
+    )
+
+    const nasaData = res.data?.data || []
+    const totalRain = nasaData.length ? nasaData[0].data : 0
+
+    const conditions = ["Clear", "Cloudy", "Rain", "Overcast"]
+
+    hourlyData.value = Array.from({ length: 24 }, (_, i) => {
+      const hour = `${String(i).padStart(2, "0")}:00`
+      const condition = totalRain > 1 && i % 5 === 0 ? "Rain" : conditions[Math.floor(Math.random() * conditions.length)]
+
+      const baseTemp = 18 + 6 * Math.sin((i / 24) * Math.PI * 2)
+      const temp = Math.round(baseTemp + (Math.random() * 2 - 1))
+
+      const rain = condition === "Rain" ? totalRain / 24 + Math.random() * 0.3 : 0
+
+      return { time: hour, temp, condition, rain }
     })
+  } catch (err) {
+    console.error("Erreur API :", err)
+    error.value = "Impossible de charger les données météo."
+  } finally {
+    loading.value = false
   }
-  
-  await new Promise(resolve => setTimeout(resolve, 300))
-  hourlyData.value = data
 }
 
-fetchHourlyForecast(props.selectedDate, props.location)
-
-watch(() => props.selectedDate, (newDate) => {
-  hourlyData.value = []
-  fetchHourlyForecast(newDate, props.location)
-}, { immediate: false })
+watch(
+  () => [props.selectedDate, props.latitude, props.longitude],
+  fetchHourlyForecast,
+  { immediate: true }
+)
 </script>
 
 <style scoped>

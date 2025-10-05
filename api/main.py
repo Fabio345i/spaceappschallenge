@@ -17,19 +17,12 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv()
+from fastapi.middleware.cors import CORSMiddleware
+from api.routes import weather
+from .routes.gibs import router as gibs_router
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    await session.connect_db()
-    yield  
-    await session.disconnect_db()
 
-app = FastAPI(lifespan=lifespan)
-
-origins = [
-    "http://localhost:5173",  # Domaine de dev
-    "http://167.160.189.194",    # Domaine de prod
-]
+app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
@@ -39,8 +32,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ici on inclut routeur météo
+app.include_router(weather.router)
+app.include_router(gibs_router)
+app.include_router(algo_router)
+app.include_router(merra2_router)
+
 @app.get("/")
-def read_root():
+def root():
     return {"message": "Hello, FastAPI!"}
 
 app.include_router(register_router, prefix="/auth", tags=["Auth"])

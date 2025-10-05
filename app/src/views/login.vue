@@ -115,7 +115,7 @@ export default {
         if (response.ok) {
           this.message = { type: 'success', text: 'Login success' }
           localStorage.setItem('token', data.access_token)
-          this.$router.push('home')
+          this.$router.push('/')
         } else {
           this.message = { type: 'error', text: data.detail || 'Invalid credentials' }
         }

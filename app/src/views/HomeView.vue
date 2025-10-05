@@ -38,7 +38,7 @@ function selectFavorite(fav) {
 function logout() {
   localStorage.removeItem("token")
   isAuthenticated.value = false
-  router.push("home")
+  router.push("/")
 }
 
 const selectedDate = ref(new Date())

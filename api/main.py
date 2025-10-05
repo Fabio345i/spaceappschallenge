@@ -10,6 +10,8 @@ from api.routes.merra2 import router as merra2_router
 from api.routes.algo import router as algo_router
 from api.db.session import connect_db, disconnect_db
 from fastapi.middleware.cors import CORSMiddleware
+from api.routes.auth.favorites import router as favorite_router
+
 
 from dotenv import load_dotenv
 import os
@@ -49,3 +51,4 @@ app.include_router(rainfall.router, prefix="/weather", tags=["Weather"])
 # app.include_router(login_router, prefix="/login", tags=["Login"])
 app.include_router(algo_router, prefix="/algo", tags=["Algo"])
 app.include_router(merra2_router, prefix="/merra2", tags=["MERRA-2"])
+app.include_router(favorite_router, prefix="/auth", tags=["Favorites"])

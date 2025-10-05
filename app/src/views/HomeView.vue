@@ -9,7 +9,7 @@ import TutorialDriver from '@/components/tutorial/TutorialDriver.vue'
 
 const tutorial = ref(null)
 import router from '@/router'
-import { onMounted } from 'vue'
+
 import axios from 'axios'
 const disasterHeadlines = ref([])
 const headlinesLoading = ref(true)

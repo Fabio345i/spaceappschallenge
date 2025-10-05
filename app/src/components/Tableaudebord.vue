@@ -98,42 +98,90 @@ watch(
   { deep: true }
 )
 
+function isSameDayUTC(a, b) {
+  const da = new Date(Date.UTC(a.getUTCFullYear(), a.getUTCMonth(), a.getUTCDate()))
+  const db = new Date(Date.UTC(b.getUTCFullYear(), b.getUTCMonth(), b.getUTCDate()))
+  return da.getTime() === db.getTime()
+}
+
+function isPastOrTodayUTC(d) {
+  const today = new Date()
+  const dUTC = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
+  const tUTC = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()))
+  return dUTC.getTime() <= tUTC.getTime()
+}
+
 async function fetchWeather(loc, date) {
   try {
     const d = new Date(date)
-    const y = d.getFullYear()
-    const m = String(d.getMonth() + 1).padStart(2, "0")
-    const day = String(d.getDate()).padStart(2, "0")
-
-    // --- 1. Analyse historique ---
-    const analyseRes = await axios.get("http://127.0.0.1:8000/daily/analyse", {
-      params: { lat: loc.lat, lon: loc.lon, day, month: m, years: 20 }
-    })
-    const analyse = analyseRes.data
-
-    if (analyse && analyse.T_moyenne != null) {
-      temperature.value = analyse.T_moyenne.toFixed(1)
-      tMin.value = analyse.Tmin_moyenne?.toFixed(1) ?? "--"
-      tMax.value = analyse.Tmax_moyenne?.toFixed(1) ?? "--"
-      humidity.value = analyse.humidite_moyenne?.toFixed(0) ?? "--"
-      wind.value = analyse.vent_moyen_m_s?.toFixed(1) ?? "--"
-      pressure.value = analyse.pression_moy_kPa?.toFixed(1) ?? "--"
-    } else {
-      console.warn("Réponse inattendue de /daily/analyse :", analyse)
-      temperature.value = tMin.value = tMax.value = humidity.value = wind.value = pressure.value = "--"
-    }
-
-    // --- 2. Données POWER exactes pour la date ---
+    const y = d.getUTCFullYear()
+    const m = String(d.getUTCMonth() + 1).padStart(2, "0")
+    const day = String(d.getUTCDate()).padStart(2, "0")
     const dateStr = `${y}${m}${day}`
-    const powerRes = await axios.get("http://127.0.0.1:8000/power/daily", {
-      params: { lat: loc.lat, lon: loc.lon, start: dateStr, end: dateStr }
-    })
-    const params = powerRes.data?.parameters
-    rain.value = params?.PRECTOTCORR?.[dateStr]?.toFixed(1) ?? "--"
+
+    dataLoaded.value = false
+
+    if (isPastOrTodayUTC(d)) {
+      const analyseRes = await axios.get("http://127.0.0.1:8000/daily/analyse", {
+        params: { lat: loc.lat, lon: loc.lon, day, month: m, years: 20 }
+      })
+      const a = analyseRes.data || {}
+
+      temperature.value = a.T_moyenne != null ? a.T_moyenne.toFixed(1) : "--"
+      tMin.value       = a.Tmin_moyenne != null ? a.Tmin_moyenne.toFixed(1) : "--"
+      tMax.value       = a.Tmax_moyenne != null ? a.Tmax_moyenne.toFixed(1) : "--"
+      humidity.value   = a.humidite_moyenne != null ? a.humidite_moyenne.toFixed(0) : "--"
+      wind.value       = a.vent_moyen_m_s != null ? a.vent_moyen_m_s.toFixed(1) : "--"
+      pressure.value   = a.pression_moy_kPa != null ? a.pression_moy_kPa.toFixed(1) : "--"
+
+      try {
+        const powerRes = await axios.get("http://127.0.0.1:8000/power/daily", {
+          params: { lat: loc.lat, lon: loc.lon, start: dateStr, end: dateStr }
+        })
+        const params = powerRes.data?.parameters
+        rain.value = params?.PRECTOTCORR?.[dateStr] != null
+          ? Number(params.PRECTOTCORR[dateStr]).toFixed(1)
+          : "--"
+      } catch {
+        rain.value = a.pluie_moy_mm != null ? Number(a.pluie_moy_mm).toFixed(1) : "--"
+      }
+    } else {
+      const predictRes = await axios.get("http://127.0.0.1:8000/daily/predict", {
+        params: {
+          lat: loc.lat,
+          lon: loc.lon,
+          day,
+          month: m,
+          base_years: 20,
+          future_year: y,
+          window_days: 3
+        }
+      })
+      const p = predictRes.data || {}
+
+      const getNum = (v) => (v == null || v === "--" || Number.isNaN(Number(v)) ? null : Number(v))
+
+      const tAvg  = getNum(p.T_moyenne ?? p.temp_moy ?? p.temperature ?? p.temp)
+      const tmin  = getNum(p.Tmin_moyenne ?? p.tmin ?? p.temp_min)
+      const tmax  = getNum(p.Tmax_moyenne ?? p.tmax ?? p.temp_max)
+      const hum   = getNum(p.humidite_moyenne ?? p.humidite ?? p.rh ?? p.rh_moy)
+      const windM = getNum(p.vent_moyen_m_s ?? p.vent_moy ?? p.wind ?? p.wind_m_s)
+      const press = getNum(p.pression_moy_kPa ?? p.pression ?? p.pressure_kPa)
+      const rainP = getNum(p.pluie_moy_mm ?? p.precip_mm ?? p.precip)
+
+      temperature.value = tAvg != null ? tAvg.toFixed(1) : "--"
+      tMin.value        = tmin != null ? tmin.toFixed(1) : "--"
+      tMax.value        = tmax != null ? tmax.toFixed(1) : "--"
+      humidity.value    = hum  != null ? hum.toFixed(0)   : "--"
+      wind.value        = windM!= null ? windM.toFixed(1) : "--"
+      pressure.value    = press!= null ? press.toFixed(1) : "--"
+      rain.value        = rainP!= null ? rainP.toFixed(1) : "--"
+    }
 
     dataLoaded.value = true
   } catch (e) {
     console.error("Erreur API :", e)
+    temperature.value = tMin.value = tMax.value = humidity.value = wind.value = pressure.value = rain.value = "--"
     dataLoaded.value = false
   }
 }

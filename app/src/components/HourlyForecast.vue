@@ -1,29 +1,45 @@
 <template>
   <div class="px-4 py-3">
-    <div class="flex items-center justify-between mb-2">
+    <div class="flex items-center justify-between mb-4">
       <h2 class="text-sm font-medium text-white">
-        Hourly Forecast - {{ formattedDate }}
+        Precipitation Forecast - {{ formattedDate }}
       </h2>
     </div>
 
-    <div v-if="loading" class="text-center py-4 text-gray-400">Chargement des données...</div>
-    <div v-else-if="error" class="text-center text-red-500 py-4">{{ error }}</div>
+    <div v-if="loading" class="text-center py-8 text-gray-400">
+      Loading precipitation data...
+    </div>
 
-    <div v-else-if="hourlyData.length" class="flex overflow-x-auto space-x-2 pb-2">
+    <div v-else-if="error" class="text-center text-red-500 py-8">
+      {{ error }}
+    </div>
+
+    <div v-else-if="periods.length" class="grid grid-cols-4 gap-3">
       <div
-        v-for="hour in hourlyData"
-        :key="hour.time"
-        class="flex-shrink-0 w-20 p-2 rounded bg-gray-900 border border-gray-800 text-center hover:border-gray-700"
+        v-for="period in periods"
+        :key="period.label"
+        class="relative p-4 rounded-lg bg-gray-900 border border-gray-800 text-center"
       >
-        <p class="text-xs text-gray-500 mb-1">{{ hour.time }}</p>
-        <p class="text-base font-semibold text-white">{{ hour.temp }}°</p>
-        <p class="text-xs text-gray-500 mt-1">{{ hour.condition }}</p>
-        <p v-if="hour.rain > 0" class="text-xs text-blue-400 mt-1">{{ hour.rain.toFixed(2) }} mm</p>
+        <p class="text-xs font-medium text-blue-400 mb-3">{{ period.label }}</p>
+        
+        <div class="my-3">
+          <svg class="w-8 h-8 mx-auto mb-2" :class="period.rain > 0 ? 'text-blue-400' : 'text-gray-600'" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10 3.5a.5.5 0 01.5.5v1a.5.5 0 01-1 0V4a.5.5 0 01.5-.5zm-3 8a.5.5 0 01.5.5v3a.5.5 0 01-1 0v-3a.5.5 0 01.5-.5zm6 0a.5.5 0 01.5.5v3a.5.5 0 01-1 0v-3a.5.5 0 01.5-.5zm-3-1a.5.5 0 01.5.5v4a.5.5 0 01-1 0v-4a.5.5 0 01.5-.5z"/>
+          </svg>
+          <p class="text-2xl font-bold" :class="period.rain > 0 ? 'text-blue-400' : 'text-gray-500'">
+            {{ period.rain.toFixed(1) }}
+          </p>
+          <p class="text-xs text-gray-500 mt-1">mm</p>
+        </div>
+
+        <p class="text-xs" :class="period.rain > 0 ? 'text-blue-300' : 'text-gray-600'">
+          {{ period.rain > 2 ? 'Heavy' : period.rain > 0.5 ? 'Moderate' : 'No rain' }}
+        </p>
       </div>
     </div>
 
-    <div v-else class="text-center text-gray-500 py-4">
-      Aucune donnée disponible pour cette journée.
+    <div v-else class="text-center text-gray-500 py-8">
+      No precipitation data available
     </div>
   </div>
 </template>
@@ -39,24 +55,35 @@ const props = defineProps({
   location: String,
 })
 
-const hourlyData = ref([])
+const totalRain = ref(0)
 const loading = ref(false)
 const error = ref("")
 
 const formattedDate = computed(() => {
-  return props.selectedDate?.toLocaleDateString("fr-FR", {
+  return props.selectedDate?.toLocaleDateString("en-US", {
     weekday: "short",
     month: "short",
     day: "numeric",
   })
 })
 
-const fetchHourlyForecast = async () => {
+const periods = computed(() => {
+  const rainPerPeriod = totalRain.value / 4
+  
+  return [
+    { label: "Night", time: "00:00 - 06:00", rain: rainPerPeriod + (Math.random() * 0.5 - 0.25) },
+    { label: "Morning", time: "06:00 - 12:00", rain: rainPerPeriod + (Math.random() * 0.5 - 0.25) },
+    { label: "Afternoon", time: "12:00 - 18:00", rain: rainPerPeriod + (Math.random() * 0.5 - 0.25) },
+    { label: "Evening", time: "18:00 - 00:00", rain: rainPerPeriod + (Math.random() * 0.5 - 0.25) },
+  ].map(p => ({ ...p, rain: Math.max(0, p.rain) }))
+})
+
+const fetchPrecipitation = async () => {
   if (!props.latitude || !props.longitude || !props.selectedDate) return
 
   loading.value = true
   error.value = ""
-  hourlyData.value = []
+  totalRain.value = 0
 
   try {
     const date = props.selectedDate.toISOString().split("T")[0]
@@ -65,24 +92,10 @@ const fetchHourlyForecast = async () => {
     )
 
     const nasaData = res.data?.data || []
-    const totalRain = nasaData.length ? nasaData[0].data : 0
-
-    const conditions = ["Clear", "Cloudy", "Rain", "Overcast"]
-
-    hourlyData.value = Array.from({ length: 24 }, (_, i) => {
-      const hour = `${String(i).padStart(2, "0")}:00`
-      const condition = totalRain > 1 && i % 5 === 0 ? "Rain" : conditions[Math.floor(Math.random() * conditions.length)]
-
-      const baseTemp = 18 + 6 * Math.sin((i / 24) * Math.PI * 2)
-      const temp = Math.round(baseTemp + (Math.random() * 2 - 1))
-
-      const rain = condition === "Rain" ? totalRain / 24 + Math.random() * 0.3 : 0
-
-      return { time: hour, temp, condition, rain }
-    })
+    totalRain.value = nasaData.length ? nasaData[0].data : 0
   } catch (err) {
-    console.error("Erreur API :", err)
-    error.value = "Impossible de charger les données météo."
+    console.error("API Error:", err)
+    error.value = "Unable to load precipitation data"
   } finally {
     loading.value = false
   }
@@ -90,20 +103,10 @@ const fetchHourlyForecast = async () => {
 
 watch(
   () => [props.selectedDate, props.latitude, props.longitude],
-  fetchHourlyForecast,
+  fetchPrecipitation,
   { immediate: true }
 )
 </script>
 
 <style scoped>
-.overflow-x-auto::-webkit-scrollbar {
-  height: 4px;
-}
-.overflow-x-auto::-webkit-scrollbar-track {
-  background: #1f2937;
-}
-.overflow-x-auto::-webkit-scrollbar-thumb {
-  background: #4b5563;
-  border-radius: 2px;
-}
 </style>

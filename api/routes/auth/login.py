@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from db import session
-from routes.auth import schemas, utils
+from api.db import session
+from api.routes.auth import schemas, utils
 from datetime import timedelta, timezone
 
 router = APIRouter()

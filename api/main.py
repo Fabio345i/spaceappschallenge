@@ -17,12 +17,14 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv()
-from fastapi.middleware.cors import CORSMiddleware
-from api.routes import weather
-from .routes.gibs import router as gibs_router
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await connect_db()
+    yield
+    await disconnect_db()
 
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -32,8 +34,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ici on inclut routeur météo
-app.include_router(weather.router)
+from .routes.gibs import router as gibs_router
+from api.routes.weather import rainfall
+
+app.include_router(rainfall.router)
 app.include_router(gibs_router)
 app.include_router(algo_router)
 app.include_router(merra2_router)

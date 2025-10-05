@@ -10,7 +10,6 @@ import Loading from '@/views/LoadingOverlay.vue'
 
 const tutorial = ref(null)
 import router from '@/router'
-
 import axios from 'axios'
 const disasterHeadlines = ref([])
 const headlinesLoading = ref(true)

@@ -63,6 +63,7 @@ watch(
     if (!val || !viewer) return
 
     if (cityDataSource) {
+      console.log(cityDataSource);
       viewer.dataSources.remove(cityDataSource, true)
       cityDataSource = null
     }
@@ -76,7 +77,6 @@ watch(
     if (val.geojson) {
       geojsonToLoad = val.geojson
     }
-
     else if (val.osm_id) {
       geojsonToLoad = await fetchOsmBoundary(val.osm_id)
     }
@@ -91,8 +91,8 @@ watch(
       }
 
       cityDataSource = await GeoJsonDataSource.load(geojsonToLoad, {
-        stroke: Color.fromCssColorString('#FF4081'),
-        fill: Color.fromCssColorString('#FF4081').withAlpha(0.15),
+        stroke: Color.fromCssColorString('#6b7280'),
+        fill: Color.fromCssColorString('#6b7280').withAlpha(0.2),
         strokeWidth: 2
       })
       viewer.dataSources.add(cityDataSource)
@@ -106,7 +106,6 @@ watch(
       }
     }
 
-    // 🔵 Ajout du pin central
     if (val.lat && val.lon) {
       markerEntity = viewer.entities.add({
         position: Cartesian3.fromDegrees(val.lon, val.lat),
@@ -130,12 +129,24 @@ watch(
 </script>
 
 <template>
-  <div ref="cesiumContainer" class="globe"></div>
+  <div class="globe-wrapper">
+    <div ref="cesiumContainer" class="globe"></div>
+  </div>
 </template>
 
 <style scoped>
+.globe-wrapper {
+  width: 100%;
+  height: 100%;
+  padding: 16px;
+}
+
 .globe {
   width: 100%;
-  height: 100vh;
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #374151;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 </style>

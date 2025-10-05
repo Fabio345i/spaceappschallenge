@@ -7,8 +7,7 @@ import {
   GeoJsonDataSource,
   Color,
   Cartesian3,
-  HeadingPitchRange,
-  ScreenSpaceEventType
+  HeadingPitchRange
 } from 'cesium'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
 
@@ -16,6 +15,10 @@ const props = defineProps({
   target: {
     type: Object,
     default: null
+  },
+  resetTrigger: {
+    type: Number,
+    default: 0
   }
 })
 
@@ -31,8 +34,17 @@ async function fetchOsmBoundary(osmId) {
     if (!res.ok) throw new Error('OSM Boundaries error')
     return await res.json()
   } catch (e) {
-    console.warn('Impossible de charger les limites OSM Boundaries', e)
+    console.warn('Failed to load OSM boundaries', e)
     return null
+  }
+}
+
+function resetCameraView() {
+  if (viewer) {
+    viewer.camera.flyTo({
+      destination: Cartesian3.fromDegrees(-95, 50, 9000000),
+      duration: 1.5
+    })
   }
 }
 
@@ -44,7 +56,7 @@ onMounted(() => {
     animation: false,
     terrainProvider: new EllipsoidTerrainProvider()
   })
-  
+
   viewer.imageryLayers.removeAll()
   viewer.imageryLayers.addImageryProvider(
     new UrlTemplateImageryProvider({
@@ -56,31 +68,14 @@ onMounted(() => {
   viewer.camera.flyTo({
     destination: Cartesian3.fromDegrees(-95, 50, 9000000)
   })
-
-  handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas)
-  handler.setInputAction((mouvement) => {
-    picked = viewer.scene.pick(mouvement.position)
-    if(Cesium.defined(picked) && picked.id){
-    entiter = picked.id
-    // Attribuer les données
-      popupTitle.value = montagne.name || 'Mont-Tremblant';
-      
-      climatData.value = {
-        altitude_base: montagne.altitude_base || 265,
-        altitude_sommet: montagne.altitude_sommet || 875,
-        temperature_base: montagne.temperature_base || 15,
-        humiditer_base: montagne.humiditer_base || 65,
-        vent_base: montagne.vent_base || 12,
-        precipitation_base: montagne.precipitation_base || 0,
-        temperature_sommet: montagne.temperature_sommet || 8,
-        vent_sommet: montagne.vent_sommet || 28,
-        precipitation_sommet: montagne.precipitation_sommet || 2
-      };
-      
-      showPopup.value = true;
-    }
-  }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 })
+
+watch(
+  () => props.resetTrigger,
+  () => {
+    resetCameraView()
+  }
+)
 
 watch(
   () => props.target,
@@ -88,7 +83,6 @@ watch(
     if (!val || !viewer) return
 
     if (cityDataSource) {
-      console.log(cityDataSource);
       viewer.dataSources.remove(cityDataSource, true)
       cityDataSource = null
     }
@@ -101,8 +95,7 @@ watch(
 
     if (val.geojson) {
       geojsonToLoad = val.geojson
-    }
-    else if (val.osm_id) {
+    } else if (val.osm_id) {
       geojsonToLoad = await fetchOsmBoundary(val.osm_id)
     }
 
@@ -151,44 +144,10 @@ watch(
   },
   { deep: true }
 )
-
-
 </script>
 
 <template>
-  <div ref="cesiumContainer" class="globe"></div>
-
-  <InfoPopup
-    :visible="showPopup"
-    :title="popupTitle"
-    :climatData="climatData"
-    @close="showPopup = false"
-  />
-
-  <div class="globe-wrapper">
-    <div ref="cesiumContainer" class="globe"></div>
+  <div class="w-full h-full bg-gray-900 border border-gray-800 rounded-md overflow-hidden">
+    <div ref="cesiumContainer" class="w-full h-full"></div>
   </div>
 </template>
-
-
-
-<style scoped>
-.globe-wrapper {
-  width: 100%;
-  height: 100%;
-  padding: 16px;
-}
-
-.globe {
-  width: 100%;
-  height: 100%;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid #374151;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-}
-</style>
-
-
-
-

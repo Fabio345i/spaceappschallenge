@@ -68,7 +68,7 @@ const tutorialSteps = [
     element: 'input[type="text"][readonly]',
     popover: {
       title: 'Future Date Selected',
-      description: 'We automatically selected a date 12 years from now for prediction. This demonstrates our long-term forecasting capabilities!',
+      description: 'We automatically selected a future date for prediction. This demonstrates our forecasting capabilities!',
       side: 'right',
       align: 'start'
     }
@@ -76,16 +76,7 @@ const tutorialSteps = [
   {
     popover: {
       title: 'Ready to Launch',
-      description: 'Perfect. We will now launch the prediction for Berlin on a future date. Click "Next" to proceed.',
-    }
-  },
-  {
-    element: '.border-b.border-gray-800.bg-gray-950',
-    popover: {
-      title: 'Hourly Precipitation Forecast',
-      description: 'Here you see hour-by-hour precipitation predictions. Our algorithm analyzes 46 years of historical patterns to forecast future rainfall with confidence percentages.',
-      side: 'left',
-      align: 'start'
+      description: 'Perfect. We will now launch the prediction for Berlin on a future date. Click "Done" to proceed.',
     }
   }
 ]
@@ -101,9 +92,7 @@ function startTutorial() {
     if (e.key === 'Enter') {
       const value = (searchInput?.value || '').toLowerCase()
       if (!(value.includes('berlin') && value.includes('germany'))) {
-        e.preventDefault()
-        e.stopPropagation()
-        e.stopImmediatePropagation()
+        e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation()
         return false
       }
     }
@@ -113,9 +102,7 @@ function startTutorial() {
     if (e.key === 'Enter' && document.activeElement === searchInput) {
       const value = (searchInput?.value || '').toLowerCase()
       if (!(value.includes('berlin') && value.includes('germany'))) {
-        e.preventDefault()
-        e.stopPropagation()
-        e.stopImmediatePropagation()
+        e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation()
         return false
       }
     }
@@ -152,10 +139,7 @@ function startTutorial() {
     allowClose: false,
 
     onDestroyStarted: () => {
-      const currentIndex = driverObj.value?.getState?.()?.activeIndex ?? 0
-      if (currentIndex >= tutorialSteps.length - 1) {
-        runPrediction()
-      }
+      runPrediction()
 
       if (searchInput) {
         searchInput.removeEventListener('keydown', blockEnter, true)
@@ -184,23 +168,6 @@ function startTutorial() {
         return
       }
 
-      if (currentStepIndex === 3) {
-        runPrediction()
-        
-        const waitForLoading = setInterval(() => {
-          const loadingOverlay = document.querySelector('.loading-overlay')
-          const isLoading = loadingOverlay && window.getComputedStyle(loadingOverlay).opacity !== '0'
-          
-          if (!isLoading) {
-            clearInterval(waitForLoading)
-            setTimeout(() => {
-              driverObj.value.moveNext()
-            }, 1000)
-          }
-        }, 500)
-        return
-      }
-
       driverObj.value.moveNext()
     }
   })
@@ -215,51 +182,28 @@ function startTutorial() {
           if (!driverObj.value) return
           setPhase('calendar')
 
-          const now = new Date()
-          const futureYear = now.getFullYear() + 12
-          
+          const monthsToAdvance = 12 * 12 // 12 ans
           const dateInput = document.querySelector('input[type="text"][readonly]')
           if (dateInput) {
             dateInput.click()
-            
             setTimeout(() => {
-              const yearButton = document.querySelector('button.text-sm.font-medium.text-gray-100')
-              if (yearButton) {
-                yearButton.click()
-                
+              const nextButtons = document.querySelectorAll('button')
+              const nextButton = Array.from(nextButtons).find(btn => {
+                const svg = btn.querySelector('svg path[d*="M9 5l7 7-7 7"]')
+                return svg !== null
+              })
+              if (nextButton) {
+                for (let i = 0; i < monthsToAdvance; i++) nextButton.click()
                 setTimeout(() => {
-                  const yearButtons = document.querySelectorAll('button.py-3.px-2.rounded.text-sm')
-                  const targetYearBtn = Array.from(yearButtons).find(btn => 
-                    btn.textContent.trim() === futureYear.toString()
+                  const dayButtons = document.querySelectorAll('button.aspect-square')
+                  const day15 = Array.from(dayButtons).find(btn =>
+                    btn.textContent.trim() === '15' &&
+                    !btn.classList.contains('text-gray-500')
                   )
-                  
-                  if (targetYearBtn) {
-                    targetYearBtn.click()
-                    
+                  if (day15) {
+                    day15.click()
                     setTimeout(() => {
-                      const monthButtons = document.querySelectorAll('button.py-3.px-2.rounded.text-sm')
-                      const currentMonthIndex = now.getMonth()
-                      const monthBtn = monthButtons[currentMonthIndex]
-                      
-                      if (monthBtn) {
-                        monthBtn.click()
-                        
-                        setTimeout(() => {
-                          const dayButtons = document.querySelectorAll('button.aspect-square')
-                          const day15 = Array.from(dayButtons).find(btn => 
-                            btn.textContent.trim() === '15' && 
-                            !btn.classList.contains('text-gray-500')
-                          )
-                          
-                          if (day15) {
-                            day15.click()
-                            
-                            setTimeout(() => {
-                              driverObj.value.moveNext()
-                            }, 200)
-                          }
-                        }, 200)
-                      }
+                      driverObj.value.moveNext()
                     }, 200)
                   }
                 }, 200)
@@ -281,6 +225,8 @@ onMounted(() => {
 defineExpose({ startTutorial })
 </script>
 
+
+
 <template>
   <div></div>
 </template>
@@ -296,7 +242,6 @@ defineExpose({ startTutorial })
   min-width: 320px !important;
   z-index: 10001 !important;
 }
-
 .driver-popover-title {
   color: #ffffff !important;
   font-size: 16px !important;
@@ -306,7 +251,6 @@ defineExpose({ startTutorial })
   display: block !important;
   line-height: 1.4 !important;
 }
-
 .driver-popover-description {
   color: #9ca3af !important;
   font-size: 14px !important;
@@ -315,7 +259,6 @@ defineExpose({ startTutorial })
   margin: 0 !important;
   display: block !important;
 }
-
 .driver-popover-footer {
   position: absolute !important;
   bottom: 0 !important;
@@ -329,13 +272,7 @@ defineExpose({ startTutorial })
   background-color: #0a0a0a !important;
   border-radius: 0 0 8px 8px !important;
 }
-
-.driver-popover-progress-text {
-  color: #6b7280 !important;
-  font-size: 13px !important;
-  font-weight: 500 !important;
-}
-
+.driver-popover-progress-text { color: #6b7280 !important; font-size: 13px !important; font-weight: 500 !important; }
 .driver-popover-next-btn,
 .driver-popover-prev-btn {
   background: #1f2937 !important;
@@ -349,34 +286,23 @@ defineExpose({ startTutorial })
   box-shadow: none !important;
   cursor: pointer !important;
 }
-
 .driver-popover-next-btn:hover,
-.driver-popover-prev-btn:hover {
-  background: #374151 !important;
-  border-color: #4b5563 !important;
-}
-
-.driver-popover-close-btn {
-  display: none !important;
-}
-
+.driver-popover-prev-btn:hover { background: #374151 !important; border-color: #4b5563 !important; }
+.driver-popover-close-btn { display: none !important; }
 .driver-active-element {
   border-radius: 8px !important;
   box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.8), 0 0 20px rgba(59, 130, 246, 0.4) !important;
   position: relative !important;
   z-index: 10000 !important;
 }
-
-.driver-overlay {
-  background: rgba(0, 0, 0, 0.3) !important;
-}
+.driver-overlay { background: rgba(0, 0, 0, 0.3) !important; }
 
 .tutorial-running .search-bar [role="listbox"],
 .tutorial-running .search-bar .suggestions,
 .tutorial-running .search-bar .autocomplete-panel,
 .tutorial-running .search-bar .autocomplete,
-.tutorial-running .pac-container,
-.tutorial-running .mapboxgl-ctrl-geocoder--suggestions,
+.tutorial-running .pac-container, /* Google Places */
+.tutorial-running .mapboxgl-ctrl-geocoder--suggestions, /* Mapbox */
 .tutorial-running .osmgeocoder-suggestions {
   display: none !important;
   visibility: hidden !important;

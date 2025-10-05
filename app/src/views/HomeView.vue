@@ -1,12 +1,15 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import SearchBar from '@/components/SearchBar.vue'
 import GlobeCesium from '@/components/GlobeCesium.vue'
 import Tableaudebord from '@/components/Tableaudebord.vue'
 import Calendar from '@/components/Calendar.vue'
 import HourlyForecast from '@/components/HourlyForecast.vue'
 import TutorialDriver from '@/components/tutorial/TutorialDriver.vue'
+
 const tutorial = ref(null)
+const disasterHeadlines = ref([])
+const headlinesLoading = ref(true)
 
 const target = ref(null)
 const mobileMenuOpen = ref(false)
@@ -33,6 +36,58 @@ function handleDateSelected(date) {
 function handleResetView() {
   resetTrigger.value++
 }
+
+function extractCoordinates(headline) {
+  const regex = /(\d+\.?\d*)°([NS]),\s*(\d+\.?\d*)°([EW])/
+  const match = headline.match(regex)
+  
+  if (match) {
+    let lat = parseFloat(match[1])
+    let lon = parseFloat(match[3])
+    
+    if (match[2] === 'S') lat = -lat
+    if (match[4] === 'W') lon = -lon
+    
+    return { lat, lon }
+  }
+  return null
+}
+
+function handleHeadlineClick(headline) {
+  const coords = extractCoordinates(headline)
+  if (coords) {
+    target.value = coords
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+}
+
+async function fetchCatastrophesNaturelles() {
+  try {
+    const today = selectedDate.value.toISOString().split('T')[0]
+    const response = await fetch(`http://localhost:8000/disasters/headlines?date=${today}&limit=20`)
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    
+    const data = await response.json()
+    disasterHeadlines.value = data.headlines || []
+  } catch (error) {
+    console.error('Error - Natural Disasters:', error)
+    disasterHeadlines.value = ['Error loading disaster alerts']
+  } finally {
+    headlinesLoading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchCatastrophesNaturelles()
+})
+
+watch(selectedDate, () => {
+  headlinesLoading.value = true
+  fetchCatastrophesNaturelles()
+})
 </script>
 
 <template>
@@ -43,6 +98,7 @@ function handleResetView() {
     >
       <nav class="max-w-full px-8">
         <div class="flex items-center justify-between h-16">
+          
           <div class="flex items-center space-x-4">
             <div>
               <h1 class="text-lg font-semibold text-white">NASA Weather</h1>
@@ -58,13 +114,13 @@ function handleResetView() {
               Home
             </a>
 
-            <button
+            <button 
               @click="tutorial?.startTutorial()"
               class="text-gray-400 hover:text-white transition-colors text-sm font-medium"
             >
               Tutorial
             </button>
-
+            
             <div class="relative">
               <button
                 @click="favoritesOpen = !favoritesOpen"
@@ -169,8 +225,37 @@ function handleResetView() {
       </nav>
     </header>
 
+    <div class="fixed top-16 left-0 right-0 z-40 bg-yellow-500 text-black overflow-hidden border-b-2 border-yellow-600">
+      <div class="h-10 flex items-center">
+        <div v-if="headlinesLoading" class="px-4 text-sm font-medium">
+          Loading disaster alerts...
+        </div>
+        <div v-else class="ticker-wrapper">
+          <div class="ticker-content">
+            <span 
+              v-for="(headline, index) in disasterHeadlines" 
+              :key="index" 
+              class="ticker-item"
+              @click="handleHeadlineClick(headline)"
+            >
+              <span class="font-bold">ALERT:</span> {{ headline }}
+            </span>
+            <span 
+              v-for="(headline, index) in disasterHeadlines" 
+              :key="`dup-${index}`" 
+              class="ticker-item"
+              @click="handleHeadlineClick(headline)"
+            >
+              <span class="font-bold">ALERT:</span> {{ headline }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <main class="flex-1 flex pt-16 overflow-hidden">
-      <aside class="w-96 flex-shrink-0 bg-gray-950 border-r border-gray-800 overflow-y-auto">
+      
+      <aside class="w-96 flex-shrink-0 bg-gray-950 border-r border-gray-800 overflow-y-auto mt-10">
         <div class="p-6 space-y-6">
           <div>
             <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">
@@ -212,12 +297,10 @@ function handleResetView() {
         </div>
       </aside>
 
-      <div class="flex-1 flex flex-col gap-10 overflow-hidden">
+      <div class="flex-1 flex flex-col overflow-hidden mt-10">
         <div class="border-b border-gray-800 bg-gray-950">
           <div class="px-6 py-4">
-            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">
-              Hourly Forecast
-            </h2>
+            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">Hourly Forecast</h2>
             <HourlyForecast
               v-if="target"
               :selected-date="selectedDate"

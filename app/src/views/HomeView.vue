@@ -1,12 +1,15 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import SearchBar from '@/components/SearchBar.vue'
 import GlobeCesium from '@/components/GlobeCesium.vue'
 import Tableaudebord from '@/components/Tableaudebord.vue'
 import Calendar from '@/components/Calendar.vue'
 import HourlyForecast from '@/components/HourlyForecast.vue'
 import TutorialDriver from '@/components/tutorial/TutorialDriver.vue'
+
 const tutorial = ref(null)
+const disasterHeadlines = ref([])
+const headlinesLoading = ref(true)
 
 const target = ref(null)
 const mobileMenuOpen = ref(false)
@@ -33,6 +36,34 @@ function handleDateSelected(date) {
 function handleResetView() {
   resetTrigger.value++
 }
+
+async function fetchCatastrophesNaturelles() {
+  try {
+    const today = selectedDate.value.toISOString().split('T')[0]
+    const response = await fetch(`http://localhost:8000/disasters/headlines?date=${today}&limit=20`)
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    
+    const data = await response.json()
+    disasterHeadlines.value = data.headlines || []
+  } catch (error) {
+    console.error('Error - Natural Disasters:', error)
+    disasterHeadlines.value = ['Error loading disaster alerts']
+  } finally {
+    headlinesLoading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchCatastrophesNaturelles()
+})
+
+watch(selectedDate, () => {
+  headlinesLoading.value = true
+  fetchCatastrophesNaturelles()
+})
 </script>
 
 <template>
@@ -43,7 +74,8 @@ function handleResetView() {
       <nav class="max-w-full px-8">
         <div class="flex items-center justify-between h-16">
           
-          <div class="flex items-center space-x-4">            <div>
+          <div class="flex items-center space-x-4">
+            <div>
               <h1 class="text-lg font-semibold text-white">NASA Weather</h1>
               <p class="text-xs text-gray-500">Earth Observation System</p>
             </div>
@@ -55,11 +87,11 @@ function handleResetView() {
             </a>
 
             <button 
-  @click="tutorial?.startTutorial()"
-  class="text-gray-400 hover:text-white transition-colors text-sm font-medium"
->
-  Tutorial
-</button>
+              @click="tutorial?.startTutorial()"
+              class="text-gray-400 hover:text-white transition-colors text-sm font-medium"
+            >
+              Tutorial
+            </button>
             
             <div class="relative">
               <button 
@@ -118,9 +150,27 @@ function handleResetView() {
       </nav>
     </header>
 
+    <div class="fixed top-16 left-0 right-0 z-40 bg-yellow-500 text-black overflow-hidden border-b-2 border-yellow-600">
+      <div class="h-10 flex items-center">
+        <div v-if="headlinesLoading" class="px-4 text-sm font-medium">
+          Loading disaster alerts...
+        </div>
+        <div v-else class="ticker-wrapper">
+          <div class="ticker-content">
+            <span v-for="(headline, index) in disasterHeadlines" :key="index" class="ticker-item">
+              <span class="font-bold">ALERT:</span> {{ headline }}
+            </span>
+            <span v-for="(headline, index) in disasterHeadlines" :key="`dup-${index}`" class="ticker-item">
+              <span class="font-bold">ALERT:</span> {{ headline }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <main class="flex-1 flex pt-16 overflow-hidden">
       
-      <aside class="w-96 flex-shrink-0 bg-gray-950 border-r border-gray-800 overflow-y-auto">
+      <aside class="w-96 flex-shrink-0 bg-gray-950 border-r border-gray-800 overflow-y-auto mt-10">
         <div class="p-6 space-y-6">
           <div>
             <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">Location Search</h2>
@@ -148,17 +198,17 @@ function handleResetView() {
         </div>
       </aside>
 
-      <div class="flex-1 flex flex-col overflow-hidden">
+      <div class="flex-1 flex flex-col overflow-hidden mt-10">
         <div class="border-b border-gray-800 bg-gray-950">
           <div class="px-6 py-4">
             <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">Hourly Forecast</h2>
-<HourlyForecast
-  v-if="target"
-  :selected-date="selectedDate"
-  :latitude="target.lat"
-  :longitude="target.lon"
-  :location="`${target.lat}, ${target.lon}`"
-/>
+            <HourlyForecast
+              v-if="target"
+              :selected-date="selectedDate"
+              :latitude="target.lat"
+              :longitude="target.lon"
+              :location="`${target.lat}, ${target.lon}`"
+            />
           </div>
         </div>
         
@@ -189,5 +239,36 @@ function handleResetView() {
 <style scoped>
 .h-screen {
   height: 100vh;
+}
+
+.ticker-wrapper {
+  width: 100%;
+  overflow: hidden;
+}
+
+.ticker-content {
+  display: flex;
+  white-space: nowrap;
+  animation: scroll 60s linear infinite;
+}
+
+.ticker-item {
+  display: inline-block;
+  padding: 0 3rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.ticker-content:hover {
+  animation-play-state: paused;
 }
 </style>

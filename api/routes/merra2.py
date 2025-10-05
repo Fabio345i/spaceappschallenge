@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Query, HTTPException
 import requests
-import requests
 
 router = APIRouter()
 @router.get("/power/daily")

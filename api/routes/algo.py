@@ -7,7 +7,6 @@ import requests
 import statistics
 
 router = APIRouter()
-router = APIRouter()
 
 NASA_POWER_URL = "https://power.larc.nasa.gov/api/temporal/daily/point"
 PARAMS = "T2M,T2M_MIN,T2M_MAX,RH2M,U2M,V2M,PS,PRECTOTCORR"

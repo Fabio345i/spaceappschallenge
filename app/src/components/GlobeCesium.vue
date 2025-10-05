@@ -208,7 +208,6 @@ watch(
   <div ref="globeWrapper" class="globe-wrapper">
     <div ref="cesiumContainer" class="globe"></div>
     
-    <!-- Popup à l'intérieur du wrapper avec position calculée -->
     <div v-if="showPopup" class="popup-container" :style="popupPosition">
       <Popup
         :visible="showPopup"
@@ -223,20 +222,13 @@ watch(
 <style scoped>
 .globe-wrapper {
   position: relative;
-  width: 100%;
-  height: 60%;
+
+
+
+
   overflow: hidden;
   z-index: 1;
-}
-
-.globe {
-  width: 100%;
-  height: 100%;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid #374151;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-   z-index: 1;
+  flex-shrink: 0;
 }
 
 .popup-container {

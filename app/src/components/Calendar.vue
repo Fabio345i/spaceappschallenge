@@ -12,12 +12,20 @@ const emit = defineEmits(['date-selected'])
 
 const currentDate = ref(new Date())
 const viewDate = ref(new Date(props.selectedDate))
+const viewMode = ref('days')
 
 const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+const monthNamesShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 const currentMonth = computed(() => viewDate.value.getMonth())
 const currentYear = computed(() => viewDate.value.getFullYear())
+
+const yearRange = computed(() => {
+  const year = currentYear.value
+  const startYear = Math.max(1980, Math.floor(year / 12) * 12)
+  return { start: startYear, end: startYear + 11 }
+})
 
 const calendarDays = computed(() => {
   const year = currentYear.value
@@ -65,73 +73,185 @@ function isSelected(date) {
   return props.selectedDate && date.toDateString() === props.selectedDate.toDateString()
 }
 
+function isCurrentMonth(monthIndex) {
+  return monthIndex === currentDate.value.getMonth() && 
+         currentYear.value === currentDate.value.getFullYear()
+}
+
+function isSelectedMonth(monthIndex) {
+  return props.selectedDate && 
+         monthIndex === props.selectedDate.getMonth() && 
+         currentYear.value === props.selectedDate.getFullYear()
+}
+
+function isCurrentYear(year) {
+  return year === currentDate.value.getFullYear()
+}
+
+function isSelectedYear(year) {
+  return props.selectedDate && year === props.selectedDate.getFullYear()
+}
+
 function selectDate(dayObj) {
   emit('date-selected', dayObj.date)
   viewDate.value = new Date(dayObj.date)
 }
 
-function previousMonth() {
-  viewDate.value = new Date(currentYear.value, currentMonth.value - 1, 1)
+function selectMonth(monthIndex) {
+  viewDate.value = new Date(currentYear.value, monthIndex, 1)
+  viewMode.value = 'days'
 }
 
-function nextMonth() {
-  viewDate.value = new Date(currentYear.value, currentMonth.value + 1, 1)
+function selectYear(year) {
+  viewDate.value = new Date(year, currentMonth.value, 1)
+  viewMode.value = 'months'
+}
+
+function previousPeriod() {
+  if (viewMode.value === 'days') {
+    const newDate = new Date(currentYear.value, currentMonth.value - 1, 1)
+    if (newDate.getFullYear() >= 1980) {
+      viewDate.value = newDate
+    }
+  } else if (viewMode.value === 'months') {
+    if (currentYear.value > 1980) {
+      viewDate.value = new Date(currentYear.value - 1, currentMonth.value, 1)
+    }
+  } else {
+    if (currentYear.value - 12 >= 1980) {
+      viewDate.value = new Date(currentYear.value - 12, currentMonth.value, 1)
+    }
+  }
+}
+
+function nextPeriod() {
+  if (viewMode.value === 'days') {
+    viewDate.value = new Date(currentYear.value, currentMonth.value + 1, 1)
+  } else if (viewMode.value === 'months') {
+    viewDate.value = new Date(currentYear.value + 1, currentMonth.value, 1)
+  } else {
+    viewDate.value = new Date(currentYear.value + 12, currentMonth.value, 1)
+  }
 }
 
 function goToToday() {
   viewDate.value = new Date()
+  viewMode.value = 'days'
   emit('date-selected', new Date())
+}
+
+function toggleMonthView() {
+  viewMode.value = viewMode.value === 'months' ? 'days' : 'months'
+}
+
+function toggleYearView() {
+  viewMode.value = viewMode.value === 'years' ? 'months' : 'years'
 }
 </script>
 
 <template>
   <div class="bg-gray-900 border border-gray-800 rounded-md p-3">
     <div class="flex items-center justify-between mb-3">
-      <button @click="previousMonth" class="p-1 hover:bg-gray-800 rounded text-gray-400 hover:text-white">
+      <button @click="previousPeriod" class="p-1 hover:bg-gray-800 rounded text-gray-400 hover:text-white transition-colors">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
         </svg>
       </button>
       
-      <h3 class="text-sm font-medium text-white">
-        {{ monthNames[currentMonth] }} {{ currentYear }}
-      </h3>
+      <div class="flex items-center gap-1">
+        <button 
+          v-if="viewMode !== 'years'"
+          @click="toggleMonthView" 
+          class="text-sm font-medium text-gray-100 hover:text-white px-2 py-1 rounded hover:bg-gray-800 transition-colors"
+        >
+          {{ monthNames[currentMonth] }}
+        </button>
+        <button 
+          @click="toggleYearView" 
+          class="text-sm font-medium text-gray-100 hover:text-white px-2 py-1 rounded hover:bg-gray-800 transition-colors"
+        >
+          <span v-if="viewMode === 'years'">{{ yearRange.start }} - {{ yearRange.end }}</span>
+          <span v-else>{{ currentYear }}</span>
+        </button>
+      </div>
       
-      <button @click="nextMonth" class="p-1 hover:bg-gray-800 rounded text-gray-400 hover:text-white">
+      <button @click="nextPeriod" class="p-1 hover:bg-gray-800 rounded text-gray-400 hover:text-white transition-colors">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
         </svg>
       </button>
     </div>
 
-    <div class="grid grid-cols-7 gap-1 mb-1">
-      <div v-for="day in daysOfWeek" :key="day" class="text-center text-xs text-gray-500 py-1">
-        {{ day }}
+    <div v-if="viewMode === 'days'">
+      <div class="grid grid-cols-7 gap-1 mb-1">
+        <div v-for="day in daysOfWeek" :key="day" class="text-center text-xs text-gray-500 py-1">
+          {{ day }}
+        </div>
+      </div>
+
+      <div class="grid grid-cols-7 gap-1">
+        <button
+          v-for="(dayObj, index) in calendarDays"
+          :key="index"
+          @click="selectDate(dayObj)"
+          :class="[
+            'aspect-square flex items-center justify-center rounded text-xs transition-colors',
+            'hover:bg-gray-800',
+            {
+              'text-gray-500': !dayObj.isCurrentMonth,
+              'text-gray-400': dayObj.isCurrentMonth && !isToday(dayObj.date) && !isSelected(dayObj.date),
+              'bg-gray-700 text-gray-100': isSelected(dayObj.date),
+              'border border-gray-700': isToday(dayObj.date) && !isSelected(dayObj.date),
+              'hover:text-white': dayObj.isCurrentMonth
+            }
+          ]"
+        >
+          {{ dayObj.day }}
+        </button>
       </div>
     </div>
 
-    <div class="grid grid-cols-7 gap-1">
+    <div v-else-if="viewMode === 'months'" class="grid grid-cols-3 gap-2">
       <button
-        v-for="(dayObj, index) in calendarDays"
+        v-for="(month, index) in monthNamesShort"
         :key="index"
-        @click="selectDate(dayObj)"
+        @click="selectMonth(index)"
         :class="[
-          'aspect-square flex items-center justify-center rounded text-xs',
+          'py-3 px-2 rounded text-sm transition-colors',
           'hover:bg-gray-800',
           {
-            'text-gray-600': !dayObj.isCurrentMonth,
-            'text-gray-400': dayObj.isCurrentMonth && !isToday(dayObj.date) && !isSelected(dayObj.date),
-            'bg-gray-700 text-white': isSelected(dayObj.date),
-            'border border-gray-600': isToday(dayObj.date) && !isSelected(dayObj.date),
-            'hover:text-white': dayObj.isCurrentMonth
+            'text-gray-400': !isCurrentMonth(index) && !isSelectedMonth(index),
+            'bg-gray-700 text-gray-100': isSelectedMonth(index),
+            'border border-gray-700': isCurrentMonth(index) && !isSelectedMonth(index),
+            'hover:text-white': true
           }
         ]"
       >
-        {{ dayObj.day }}
+        {{ month }}
       </button>
     </div>
 
-    <button @click="goToToday" class="w-full mt-3 py-1.5 px-3 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white rounded text-xs">
+    <div v-else class="grid grid-cols-3 gap-2">
+      <button
+        v-for="year in 12"
+        :key="year"
+        @click="selectYear(yearRange.start + year - 1)"
+        :class="[
+          'py-3 px-2 rounded text-sm transition-colors',
+          'hover:bg-gray-800',
+          {
+            'text-gray-400': !isCurrentYear(yearRange.start + year - 1) && !isSelectedYear(yearRange.start + year - 1),
+            'bg-gray-700 text-gray-100': isSelectedYear(yearRange.start + year - 1),
+            'border border-gray-700': isCurrentYear(yearRange.start + year - 1) && !isSelectedYear(yearRange.start + year - 1),
+            'hover:text-white': true
+          }
+        ]"
+      >
+        {{ yearRange.start + year - 1 }}
+      </button>
+    </div>
+
+    <button @click="goToToday" class="w-full mt-3 py-1.5 px-3 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white rounded text-xs transition-colors">
       Today
     </button>
   </div>

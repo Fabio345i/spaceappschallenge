@@ -10,8 +10,8 @@
             <line x1="23" y1="11" x2="17" y2="11"></line>
           </svg>
         </div>
-        <h1>Créer un compte</h1>
-        <p class="subtitle">Rejoignez-nous dès maintenant</p>
+        <h1>Register</h1>
+        <p class="subtitle">Join the team now!</p>
       </div>
 
       <div class="card">
@@ -21,7 +21,7 @@
 
         <form @submit.prevent="handleRegister">
           <div class="form-group">
-            <label>Nom d'utilisateur</label>
+            <label>Username</label>
             <div class="input-wrapper">
               <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -30,7 +30,7 @@
               <input
                 v-model="formData.username"
                 type="text"
-                placeholder="username"
+                placeholder="Username"
                 required
               />
             </div>
@@ -46,14 +46,14 @@
               <input
                 v-model="formData.email"
                 type="email"
-                placeholder="email"
+                placeholder="Email"
                 required
               />
             </div>
           </div>
 
           <div class="form-group">
-            <label>Mot de passe</label>
+            <label>Password</label>
             <div class="input-wrapper">
               <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
@@ -84,7 +84,7 @@
           </div>
 
           <button type="submit" class="submit-btn" :disabled="loading">
-            {{ loading ? 'Chargement...' : 'Créer mon compte' }}
+            {{ loading ? 'Loading...' : 'Register' }}
             <svg v-if="!loading" class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="5" y1="12" x2="19" y2="12"></line>
               <polyline points="12 5 19 12 12 19"></polyline>
@@ -93,8 +93,8 @@
         </form>
 
         <div class="footer">
-          <span class="footer-text">Déjà un compte ?</span>
-          <button class="link-btn" @click="$router.push('/login')">Se connecter</button>
+          <span class="footer-text">Already have an account ?</span>
+          <button class="link-btn" @click="$router.push('/login')">Login here</button>
         </div>
       </div>
     </div>
@@ -138,7 +138,7 @@ export default {
         if (response.ok) {
           this.message = { 
             type: 'success', 
-            text: 'Compte créé avec succès ! Redirection...' 
+            text: 'Registered successfully ! Redirecting...' 
           }
           
           this.formData = {
@@ -148,19 +148,19 @@ export default {
           }
           
           setTimeout(() => {
-            this.$router.push('/login')
+            this.$router.push('login')
           }, 2000)
         } else {
           this.message = { 
             type: 'error', 
-            text: data.detail || 'Une erreur est survenue' 
+            text: data.detail || 'An error occurred' 
           }
         }
       } catch (error) {
         console.error('Register error:', error)
         this.message = { 
           type: 'error', 
-          text: 'Erreur de connexion au serveur' 
+          text: 'Server error' 
         }
       } finally {
         this.loading = false

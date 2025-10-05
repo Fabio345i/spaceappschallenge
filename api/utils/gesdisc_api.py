@@ -1,56 +1,65 @@
-import json, time
+import json
+import time
 import urllib3
 import certifi
 from fastapi import HTTPException
 import xarray as xr
-import os
+import tempfile
 import requests
+import numpy as np
+
 GES_DISC_URL = "https://disc.gsfc.nasa.gov/service/subset/jsonwsp"
-http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED', ca_certs=certifi.where())
+http = urllib3.PoolManager(cert_reqs="CERT_REQUIRED", ca_certs=certifi.where())
 
 
-def nc_to_json(url: str) -> list[dict]:
-    import os, requests, xarray as xr
-
+def nc_to_json(url: str, minlat=None, maxlat=None, minlon=None, maxlon=None) -> list[dict]:
     clean_url = url.split("?")[0]
-    user = os.getenv("EARTHDATA_USER")
-    pwd = os.getenv("EARTHDATA_PASS")
 
-    if not user or not pwd:
-        raise RuntimeError("EARTHDATA_USER / EARTHDATA_PASS non définis")
-
-    local_path = "/tmp/temp_merra2.nc4"
-    with requests.get(clean_url, auth=(user, pwd), stream=True) as r:
+    with tempfile.NamedTemporaryFile(suffix=".nc4", delete=False) as tmp:
+        local_path = tmp.name
+    with requests.get(clean_url, stream=True) as r:
         r.raise_for_status()
         with open(local_path, "wb") as f:
             for chunk in r.iter_content(chunk_size=8192):
                 f.write(chunk)
 
     ds = xr.open_dataset(local_path)
+
+    if minlat is not None and maxlat is not None:
+        ds = ds.sel(lat=slice(minlat, maxlat))
+    if minlon is not None and maxlon is not None:
+        ds = ds.sel(lon=slice(minlon, maxlon))
+
+    ds = ds.where(~xr.ufuncs.isnan(ds), other=np.nan)
     df = ds.to_dataframe().reset_index()
+    df = df.replace({np.nan: None})
+
     return df.to_dict(orient="records")
 
 
 def post_wsp(body: dict):
-    r = http.request("POST", GES_DISC_URL, body=json.dumps(body),
-                     headers={"Content-Type": "application/json", "Accept": "application/json"})
+    r = http.request(
+        "POST",
+        GES_DISC_URL,
+        body=json.dumps(body),
+        headers={"Content-Type": "application/json", "Accept": "application/json"},
+    )
     resp = json.loads(r.data)
     if resp.get("type") == "jsonwsp/fault":
         raise HTTPException(status_code=500, detail=f"API error: {resp}")
     return resp
 
+
 def submit_and_wait(subset_request: dict) -> list[str]:
-    # submit
     resp = post_wsp(subset_request)
     job_id = resp["result"]["jobId"]
     status = resp["result"]["Status"]
 
-    # poll
     status_req = {
         "methodname": "GetStatus",
         "version": "1.0",
         "type": "jsonwsp/request",
-        "args": {"jobId": job_id}
+        "args": {"jobId": job_id},
     }
     while status in ["Accepted", "Running"]:
         time.sleep(5)
@@ -59,13 +68,13 @@ def submit_and_wait(subset_request: dict) -> list[str]:
     if status != "Succeeded":
         raise HTTPException(status_code=500, detail=f"Job failed: {resp}")
 
-    # fetch results
     results_req = {
         "methodname": "GetResult",
         "version": "1.0",
         "type": "jsonwsp/request",
-        "args": {"jobId": job_id, "count": 20, "startIndex": 0}
+        "args": {"jobId": job_id, "count": 20, "startIndex": 0},
     }
     resp = post_wsp(results_req)
     items = resp["result"]["items"]
-    return [i["link"] for i in items if "link" in i]
+    urls = [i["link"] for i in items if "link" in i]
+    return urls

@@ -37,6 +37,30 @@ function handleResetView() {
   resetTrigger.value++
 }
 
+function extractCoordinates(headline) {
+  const regex = /(\d+\.?\d*)°([NS]),\s*(\d+\.?\d*)°([EW])/
+  const match = headline.match(regex)
+  
+  if (match) {
+    let lat = parseFloat(match[1])
+    let lon = parseFloat(match[3])
+    
+    if (match[2] === 'S') lat = -lat
+    if (match[4] === 'W') lon = -lon
+    
+    return { lat, lon }
+  }
+  return null
+}
+
+function handleHeadlineClick(headline) {
+  const coords = extractCoordinates(headline)
+  if (coords) {
+    target.value = coords
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+}
+
 async function fetchCatastrophesNaturelles() {
   try {
     const today = selectedDate.value.toISOString().split('T')[0]
@@ -157,10 +181,20 @@ watch(selectedDate, () => {
         </div>
         <div v-else class="ticker-wrapper">
           <div class="ticker-content">
-            <span v-for="(headline, index) in disasterHeadlines" :key="index" class="ticker-item">
+            <span 
+              v-for="(headline, index) in disasterHeadlines" 
+              :key="index" 
+              class="ticker-item"
+              @click="handleHeadlineClick(headline)"
+            >
               <span class="font-bold">ALERT:</span> {{ headline }}
             </span>
-            <span v-for="(headline, index) in disasterHeadlines" :key="`dup-${index}`" class="ticker-item">
+            <span 
+              v-for="(headline, index) in disasterHeadlines" 
+              :key="`dup-${index}`" 
+              class="ticker-item"
+              @click="handleHeadlineClick(headline)"
+            >
               <span class="font-bold">ALERT:</span> {{ headline }}
             </span>
           </div>
@@ -257,6 +291,12 @@ watch(selectedDate, () => {
   padding: 0 3rem;
   font-size: 0.875rem;
   font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.ticker-item:hover {
+  background-color: rgba(0, 0, 0, 0.1);
 }
 
 @keyframes scroll {

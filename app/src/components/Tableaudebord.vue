@@ -66,7 +66,6 @@ const props = defineProps({
 })
 const emit = defineEmits(["reset-view"])
 
-// --- Données météo ---
 const temperature = ref("--")
 const tMin = ref("--")
 const tMax = ref("--")
@@ -98,42 +97,90 @@ watch(
   { deep: true }
 )
 
+function isSameDayUTC(a, b) {
+  const da = new Date(Date.UTC(a.getUTCFullYear(), a.getUTCMonth(), a.getUTCDate()))
+  const db = new Date(Date.UTC(b.getUTCFullYear(), b.getUTCMonth(), b.getUTCDate()))
+  return da.getTime() === db.getTime()
+}
+
+function isPastOrTodayUTC(d) {
+  const today = new Date()
+  const dUTC = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
+  const tUTC = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()))
+  return dUTC.getTime() <= tUTC.getTime()
+}
+
 async function fetchWeather(loc, date) {
   try {
     const d = new Date(date)
-    const y = d.getFullYear()
-    const m = String(d.getMonth() + 1).padStart(2, "0")
-    const day = String(d.getDate()).padStart(2, "0")
-
-    // --- 1. Analyse historique ---
-    const analyseRes = await axios.get("http://127.0.0.1:8000/daily/analyse", {
-      params: { lat: loc.lat, lon: loc.lon, day, month: m, years: 20 }
-    })
-    const analyse = analyseRes.data
-
-    if (analyse && analyse.T_moyenne != null) {
-      temperature.value = analyse.T_moyenne.toFixed(1)
-      tMin.value = analyse.Tmin_moyenne?.toFixed(1) ?? "--"
-      tMax.value = analyse.Tmax_moyenne?.toFixed(1) ?? "--"
-      humidity.value = analyse.humidite_moyenne?.toFixed(0) ?? "--"
-      wind.value = analyse.vent_moyen_m_s?.toFixed(1) ?? "--"
-      pressure.value = analyse.pression_moy_kPa?.toFixed(1) ?? "--"
-    } else {
-      console.warn("Réponse inattendue de /daily/analyse :", analyse)
-      temperature.value = tMin.value = tMax.value = humidity.value = wind.value = pressure.value = "--"
-    }
-
-    // --- 2. Données POWER exactes pour la date ---
+    const y = d.getUTCFullYear()
+    const m = String(d.getUTCMonth() + 1).padStart(2, "0")
+    const day = String(d.getUTCDate()).padStart(2, "0")
     const dateStr = `${y}${m}${day}`
-    const powerRes = await axios.get("http://127.0.0.1:8000/power/daily", {
-      params: { lat: loc.lat, lon: loc.lon, start: dateStr, end: dateStr }
-    })
-    const params = powerRes.data?.parameters
-    rain.value = params?.PRECTOTCORR?.[dateStr]?.toFixed(1) ?? "--"
+
+    dataLoaded.value = false
+
+    if (isPastOrTodayUTC(d)) {
+      const analyseRes = await axios.get("http://127.0.0.1:8000/daily/analyse", {
+        params: { lat: loc.lat, lon: loc.lon, day, month: m, years: 20 }
+      })
+      const a = analyseRes.data || {}
+
+      temperature.value = a.T_moyenne != null ? a.T_moyenne.toFixed(1) : "--"
+      tMin.value       = a.Tmin_moyenne != null ? a.Tmin_moyenne.toFixed(1) : "--"
+      tMax.value       = a.Tmax_moyenne != null ? a.Tmax_moyenne.toFixed(1) : "--"
+      humidity.value   = a.humidite_moyenne != null ? a.humidite_moyenne.toFixed(0) : "--"
+      wind.value       = a.vent_moyen_m_s != null ? a.vent_moyen_m_s.toFixed(1) : "--"
+      pressure.value   = a.pression_moy_kPa != null ? a.pression_moy_kPa.toFixed(1) : "--"
+
+      try {
+        const powerRes = await axios.get("http://127.0.0.1:8000/power/daily", {
+          params: { lat: loc.lat, lon: loc.lon, start: dateStr, end: dateStr }
+        })
+        const params = powerRes.data?.parameters
+        rain.value = params?.PRECTOTCORR?.[dateStr] != null
+          ? Number(params.PRECTOTCORR[dateStr]).toFixed(1)
+          : "--"
+      } catch {
+        rain.value = a.pluie_moy_mm != null ? Number(a.pluie_moy_mm).toFixed(1) : "--"
+      }
+    } else {
+      const predictRes = await axios.get("http://127.0.0.1:8000/daily/predict", {
+        params: {
+          lat: loc.lat,
+          lon: loc.lon,
+          day,
+          month: m,
+          base_years: 20,
+          future_year: y,
+          window_days: 3
+        }
+      })
+      const p = predictRes.data || {}
+
+      const getNum = (v) => (v == null || v === "--" || Number.isNaN(Number(v)) ? null : Number(v))
+
+      const tAvg  = getNum(p.T_moyenne ?? p.temp_moy ?? p.temperature ?? p.temp)
+      const tmin  = getNum(p.Tmin_moyenne ?? p.tmin ?? p.temp_min)
+      const tmax  = getNum(p.Tmax_moyenne ?? p.tmax ?? p.temp_max)
+      const hum   = getNum(p.humidite_moyenne ?? p.humidite ?? p.rh ?? p.rh_moy)
+      const windM = getNum(p.vent_moyen_m_s ?? p.vent_moy ?? p.wind ?? p.wind_m_s)
+      const press = getNum(p.pression_moy_kPa ?? p.pression ?? p.pressure_kPa)
+      const rainP = getNum(p.pluie_moy_mm ?? p.precip_mm ?? p.precip)
+
+      temperature.value = tAvg != null ? tAvg.toFixed(1) : "--"
+      tMin.value        = tmin != null ? tmin.toFixed(1) : "--"
+      tMax.value        = tmax != null ? tmax.toFixed(1) : "--"
+      humidity.value    = hum  != null ? hum.toFixed(0)   : "--"
+      wind.value        = windM!= null ? windM.toFixed(1) : "--"
+      pressure.value    = press!= null ? press.toFixed(1) : "--"
+      rain.value        = rainP!= null ? rainP.toFixed(1) : "--"
+    }
 
     dataLoaded.value = true
   } catch (e) {
     console.error("Erreur API :", e)
+    temperature.value = tMin.value = tMax.value = humidity.value = wind.value = pressure.value = rain.value = "--"
     dataLoaded.value = false
   }
 }
@@ -141,53 +188,165 @@ async function fetchWeather(loc, date) {
 function generatePDF() {
   const doc = new jsPDF()
   const d = new Date(props.selectedDate)
-
-  // --- Header ---
+  
+  // Couleurs professionnelles épurées
+  const primary = [30, 58, 138]      // Bleu foncé professionnel
+  const accent = [59, 130, 246]      // Bleu moyen
+  const textDark = [17, 24, 39]      // Gris très foncé
+  const textGray = [107, 114, 128]   // Gris moyen
+  const borderGray = [229, 231, 235] // Bordure légère
+  
+  // === HEADER MINIMALISTE ===
+  doc.setDrawColor(...borderGray)
+  doc.setLineWidth(0.3)
+  doc.line(20, 30, 190, 30)
+  
+  doc.setTextColor(...primary)
   doc.setFont("helvetica", "bold")
-  doc.setFontSize(18)
-  doc.text("Rapport Météo", 105, 20, { align: "center" })
-  doc.setLineWidth(0.5)
-  doc.line(20, 25, 190, 25)
-
-  // --- Infos générales ---
-  doc.setFontSize(12)
+  doc.setFontSize(24)
+  doc.text("Weather Report", 20, 20)
+  
+  doc.setTextColor(...textGray)
   doc.setFont("helvetica", "normal")
-  doc.text(`Date du rapport : ${d.toLocaleDateString()}`, 20, 35)
-  doc.text(
-    `Position : ${displayName.value} (${props.location?.lat.toFixed(2)}°, ${props.location?.lon.toFixed(2)}°)`,
-    20,
-    43
-  )
-
-  // --- Données météo ---
-  let y = 55
-  doc.setFontSize(14)
+  doc.setFontSize(10)
+  doc.text(`Generated on ${new Date().toLocaleDateString('en-US')} at ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`, 20, 27)
+  
+  // === INFORMATIONS GÉNÉRALES ===
+  let y = 45
+  
+  doc.setTextColor(...textDark)
+  doc.setFontSize(12)
   doc.setFont("helvetica", "bold")
-  doc.text("Conditions météo :", 20, y)
+  doc.text("General Information", 20, y)
+  
+  y += 2
+  doc.setDrawColor(...accent)
+  doc.setLineWidth(1.5)
+  doc.line(20, y, 70, y)
+  
   y += 10
-  doc.setFontSize(12)
+  
+  // Tableau d'informations
+  doc.setFontSize(10)
   doc.setFont("helvetica", "normal")
-
-  const data = [
-    ["Température moyenne", `${temperature.value} °C`],
-    ["Température min / max", `${tMin.value} °C / ${tMax.value} °C`],
-    ["Humidité moyenne", `${humidity.value} %`],
-    ["Vent moyen", `${wind.value} m/s`],
-    ["Pression", `${pressure.value} kPa`],
-    ["Précipitations", `${rain.value} mm`],
+  doc.setTextColor(...textDark)
+  
+  doc.text("Analysis Date", 20, y)
+  doc.setFont("helvetica", "bold")
+  doc.text(d.toLocaleDateString('en-US', { 
+    day: 'numeric', 
+    month: 'long', 
+    year: 'numeric' 
+  }), 80, y)
+  
+  y += 8
+  doc.setFont("helvetica", "normal")
+  doc.text("Location", 20, y)
+  doc.setFont("helvetica", "bold")
+  const locationName = props.location?.city || 
+                       props.location?.town || 
+                       props.location?.village || 
+                       props.location?.display_name || 
+                       `${props.location?.lat.toFixed(2)}°, ${Math.abs(props.location?.lon).toFixed(2)}°${props.location?.lon >= 0 ? 'E' : 'W'}`
+  doc.text(locationName, 80, y)
+  
+  y += 8
+  doc.setFont("helvetica", "normal")
+  doc.text("Coordinates", 20, y)
+  doc.setFont("helvetica", "normal")
+  doc.setTextColor(...textGray)
+  doc.text(`${props.location?.lat.toFixed(4)}° N, ${Math.abs(props.location?.lon).toFixed(4)}° ${props.location?.lon >= 0 ? 'E' : 'W'}`, 80, y)
+  
+  // === DONNÉES MÉTÉOROLOGIQUES ===
+  y += 20
+  
+  doc.setTextColor(...textDark)
+  doc.setFontSize(12)
+  doc.setFont("helvetica", "bold")
+  doc.text("Weather Conditions", 20, y)
+  
+  y += 2
+  doc.setDrawColor(...accent)
+  doc.setLineWidth(1.5)
+  doc.line(20, y, 80, y)
+  
+  y += 12
+  
+  // Tableau de données épuré
+  const weatherData = [
+    { label: "Average Temperature", value: `${temperature.value} °C`, unit: "°C" },
+    { label: "Minimum Temperature", value: `${tMin.value} °C`, unit: "°C" },
+    { label: "Maximum Temperature", value: `${tMax.value} °C`, unit: "°C" },
+    { label: "Relative Humidity", value: `${humidity.value} %`, unit: "%" },
+    { label: "Wind Speed", value: `${wind.value} m/s`, unit: "m/s" },
+    { label: "Atmospheric Pressure", value: `${pressure.value} kPa`, unit: "kPa" },
+    { label: "Precipitation", value: `${rain.value} mm`, unit: "mm" }
   ]
-
-  data.forEach(([label, value]) => {
-    doc.text(`• ${label} :`, 25, y)
-    doc.text(value, 100, y)
+  
+  // En-tête du tableau
+  doc.setFillColor(249, 250, 251)
+  doc.rect(20, y, 170, 8, 'F')
+  
+  doc.setDrawColor(...borderGray)
+  doc.setLineWidth(0.3)
+  doc.rect(20, y, 170, 8)
+  
+  doc.setTextColor(...textDark)
+  doc.setFontSize(9)
+  doc.setFont("helvetica", "bold")
+  doc.text("Parameter", 25, y + 5.5)
+  doc.text("Value", 160, y + 5.5)
+  
+  y += 8
+  
+  // Lignes de données
+  weatherData.forEach((item, index) => {
+    // Ligne de séparation
+    doc.setDrawColor(...borderGray)
+    doc.setLineWidth(0.3)
+    doc.line(20, y, 190, y)
+    
+    // Contenu
+    doc.setTextColor(...textDark)
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(9)
+    doc.text(item.label, 25, y + 5.5)
+    
+    doc.setFont("helvetica", "bold")
+    const valueWidth = doc.getTextWidth(item.value)
+    doc.text(item.value, 185 - valueWidth, y + 5.5)
+    
     y += 8
   })
-
-  doc.setFontSize(10)
-  doc.setTextColor(100)
-  doc.text("Source : NASA POWER & données historiques internes", 20, y + 10)
-
-  doc.save("rapport_meteo.pdf")
+  
+  // Bordure finale du tableau
+  doc.setDrawColor(...borderGray)
+  doc.line(20, y, 190, y)
+  
+  // Bordures verticales du tableau
+  doc.line(20, y - (weatherData.length * 8) - 8, 20, y)
+  doc.line(190, y - (weatherData.length * 8) - 8, 190, y)
+  
+  // === FOOTER ===
+  y = 270
+  
+  doc.setDrawColor(...borderGray)
+  doc.setLineWidth(0.3)
+  doc.line(20, y, 190, y)
+  
+  y += 6
+  
+  doc.setTextColor(...textGray)
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "normal")
+  doc.text("Data source: NASA POWER API", 20, y)
+  
+  doc.text(`Page 1/1`, 190, y, { align: "right" })
+  
+  // Sauvegarde
+  const locationForFile = props.location?.name || props.location?.display_name || 'location'
+  const fileName = `weather_report_${d.toISOString().split('T')[0]}_${locationForFile.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`
+  doc.save(fileName)
 }
 
 function resetView() {

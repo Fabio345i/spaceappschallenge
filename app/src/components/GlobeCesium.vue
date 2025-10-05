@@ -22,6 +22,10 @@ const props = defineProps({
   resetTrigger: {
     type: Number,
     default: 0
+  },
+  isLoading: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -137,10 +141,9 @@ watch(
 watch(
   () => props.target,
   async (val) => {
-    if (!val || !viewer) return
-
+    if (props.isLoading || !val || !viewer) return
+    
     if (cityDataSource) {
-      console.log(cityDataSource)
       viewer.dataSources.remove(cityDataSource, true)
       cityDataSource = null
     }
@@ -202,6 +205,80 @@ watch(
   },
   { deep: true }
 )
+
+watch(
+  () => props.isLoading,
+  (newIsLoading, oldIsLoading) => {
+    if (oldIsLoading && !newIsLoading && props.target && viewer) {
+      animateToTarget(props.target)
+    }
+  }
+)
+
+async function animateToTarget(val) {
+  if (!val || !viewer) return
+  
+  if (cityDataSource) {
+    viewer.dataSources.remove(cityDataSource, true)
+    cityDataSource = null
+  }
+  if (markerEntity) {
+    viewer.entities.remove(markerEntity)
+    markerEntity = null
+  }
+
+  let geojsonToLoad = null
+
+  if (val.geojson) {
+    geojsonToLoad = val.geojson
+  } else if (val.osm_id) {
+    geojsonToLoad = await fetchOsmBoundary(val.osm_id)
+  }
+
+  if (geojsonToLoad) {
+    if (geojsonToLoad.type === 'Polygon' || geojsonToLoad.type === 'MultiPolygon') {
+      geojsonToLoad = {
+        type: 'Feature',
+        properties: {},
+        geometry: geojsonToLoad
+      }
+    }
+
+    cityDataSource = await GeoJsonDataSource.load(geojsonToLoad, {
+      stroke: Color.fromCssColorString('#6b7280'),
+      fill: Color.fromCssColorString('#6b7280').withAlpha(0.2),
+      strokeWidth: 2
+    })
+    viewer.dataSources.add(cityDataSource)
+
+    const entities = cityDataSource.entities.values
+    if (entities.length > 0) {
+      viewer.flyTo(entities, {
+        duration: 1.5,
+        offset: new HeadingPitchRange(0, -0.5, 0)
+      })
+    }
+  }
+
+  if (val.lat && val.lon) {
+    markerEntity = viewer.entities.add({
+      position: Cartesian3.fromDegrees(val.lon, val.lat),
+      billboard: {
+        image: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+        scale: 0.08,
+        verticalOrigin: 1
+      }
+    })
+
+    if (!geojsonToLoad) {
+      viewer.camera.flyTo({
+        destination: Cartesian3.fromDegrees(val.lon, val.lat, 30000),
+        duration: 1.5
+      })
+    }
+  }
+}
+
 </script>
 
 <template>

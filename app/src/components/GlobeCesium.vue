@@ -7,7 +7,8 @@ import {
   GeoJsonDataSource,
   Color,
   Cartesian3,
-  HeadingPitchRange
+  HeadingPitchRange,
+  ScreenSpaceEventType
 } from 'cesium'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
 
@@ -43,7 +44,7 @@ onMounted(() => {
     animation: false,
     terrainProvider: new EllipsoidTerrainProvider()
   })
-
+  
   viewer.imageryLayers.removeAll()
   viewer.imageryLayers.addImageryProvider(
     new UrlTemplateImageryProvider({
@@ -55,6 +56,30 @@ onMounted(() => {
   viewer.camera.flyTo({
     destination: Cartesian3.fromDegrees(-95, 50, 9000000)
   })
+
+  handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas)
+  handler.setInputAction((mouvement) => {
+    picked = viewer.scene.pick(mouvement.position)
+    if(Cesium.defined(picked) && picked.id){
+    entiter = picked.id
+    // Attribuer les données
+      popupTitle.value = montagne.name || 'Mont-Tremblant';
+      
+      climatData.value = {
+        altitude_base: montagne.altitude_base || 265,
+        altitude_sommet: montagne.altitude_sommet || 875,
+        temperature_base: montagne.temperature_base || 15,
+        humiditer_base: montagne.humiditer_base || 65,
+        vent_base: montagne.vent_base || 12,
+        precipitation_base: montagne.precipitation_base || 0,
+        temperature_sommet: montagne.temperature_sommet || 8,
+        vent_sommet: montagne.vent_sommet || 28,
+        precipitation_sommet: montagne.precipitation_sommet || 2
+      };
+      
+      showPopup.value = true;
+    }
+  }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 })
 
 watch(
@@ -127,11 +152,23 @@ watch(
   },
   { deep: true }
 )
+
+
 </script>
 
 <template>
   <div ref="cesiumContainer" class="globe"></div>
+
+  <InfoPopup
+    :visible="showPopup"
+    :title="popupTitle"
+    :climatData="climatData"
+    @close="showPopup = false"
+  />
+
 </template>
+
+
 
 <style scoped>
 .globe {
@@ -139,3 +176,7 @@ watch(
   height: 100vh;
 }
 </style>
+
+
+
+

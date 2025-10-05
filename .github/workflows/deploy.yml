@@ -28,7 +28,7 @@ jobs:
 
       - name: Build backend image
         run: |
-          docker build -t $DOCKER_USERNAME/backend:${{ env.TAG }} ./api
+          docker build -t $DOCKER_USERNAME/backend:PROD-2.0.2 -f ./api/Dockerfile .
           docker tag $DOCKER_USERNAME/backend:${{ env.TAG }} $DOCKER_USERNAME/backend:latest
 
       - name: Push backend image

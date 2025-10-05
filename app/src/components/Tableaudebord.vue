@@ -48,6 +48,17 @@
         <p class="text-sm">Select a location to display weather data</p>
       </div>
     </transition>
+ <button
+  class="px-5 py-2 rounded-lg font-semibold text-gray-100 
+         bg-gray-800 border border-gray-700 
+         hover:bg-gray-700 hover:text-white 
+         transition-colors duration-200 
+         backdrop-blur-sm shadow-sm"
+  @click="generatePDF()"
+>
+  Enregistrer le rapport météo
+</button>
+
 
     <footer class="mt-6 text-gray-600 text-xs text-center border-t border-gray-800 pt-4">
       Data provided by <span class="text-gray-500">NASA GES DISC</span> and <span class="text-gray-500">Open-Meteo</span>
@@ -57,6 +68,55 @@
 
 <script setup>
 import { ref, computed, watch } from "vue";
+import { jsPDF } from "jspdf"
+
+const generatePDF = () => {
+  const doc = new jsPDF()
+
+  
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(20)
+  doc.text(" Rapport meteo", 105, 20, { align: "center" })
+
+  
+  doc.setLineWidth(0.5)
+  doc.line(20, 25, 190, 25)
+
+  
+  doc.setFontSize(12)
+  doc.setFont("helvetica", "normal")
+  doc.text("Date du rapport : " + new Date().toLocaleDateString(), 20, 35)
+
+  
+  const data = [
+    ["Température", "25°C"],
+    ["Précipitations", "0 mm"],
+    ["Vitesse du vent", "10 m/s"],
+    ["Qualité de l’air", "Bonne"],
+    ["Humidité", "65%"],
+  ]
+
+  let y = 50
+  doc.setFont("helvetica", "bold")
+  doc.text("Résumé des conditions :", 20, y)
+  y += 8
+
+  doc.setFont("helvetica", "normal")
+
+  data.forEach(([label, value]) => {
+    doc.text(`• ${label} :`, 25, y)
+    doc.text(value, 90, y)
+    y += 8
+  })
+
+
+  doc.setFontSize(10)
+  doc.setTextColor(100)
+
+  doc.save("rapport_meteo.pdf")
+}
+
+
 
 const props = defineProps({
   location: {

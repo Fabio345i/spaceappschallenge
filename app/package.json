@@ -13,9 +13,10 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
-    "cesium": "^1.134.0",
-    "lodash.debounce": "^4.0.8",
     "@tailwindcss/vite": "^4.1.14",
+    "cesium": "^1.134.0",
+    "jspdf": "^3.0.3",
+    "lodash.debounce": "^4.0.8",
     "pinia": "^3.0.3",
     "vue": "^3.5.22",
     "vue-router": "^4.5.1"

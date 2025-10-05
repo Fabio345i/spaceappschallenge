@@ -73,6 +73,16 @@ function toggleFavorites() {
   favoritesOpen.value = !favoritesOpen.value
 }
 
+function handleWeatherLoading(isLoading) {
+  isGlobalLoading.value = isLoading
+  if (isLoading) {
+    loadingStates.value.weather = false
+  } else {
+    loadingStates.value.weather = true
+  }
+}
+
+
 function selectFavorite(fav) {
   target.value = { lat: fav.lat, lon: fav.lon }
   favoritesOpen.value = false
@@ -141,10 +151,26 @@ onMounted(() => {
   fetchCatastrophesNaturelles()
 })
 
-watch(selectedDate, () => {
-  headlinesLoading.value = true
-  fetchCatastrophesNaturelles()
+watch(selectedDate, async () => {
+  if (target.value) {
+    isGlobalLoading.value = true
+    headlinesLoading.value = true
+    loadingStates.value.weather = false
+
+    try {
+      await fetchCatastrophesNaturelles()
+    } finally {
+      headlinesLoading.value = false
+      setTimeout(() => { 
+        if (Object.values(loadingStates.value).every(v => v)) {
+          isGlobalLoading.value = false
+        }
+      }, 200)
+    }
+  }
 })
+
+
 
 const isGlobalLoading = ref(false)
 const loadingStates = ref({
@@ -311,7 +337,12 @@ const showDisasterTicker = computed(() => {
 
           <div>
             <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">Weather Summary</h2>
-            <Tableaudebord :location="target" :selected-date="selectedDate" @reset-view="handleResetView" />
+            <Tableaudebord
+              :location="target"
+              :selected-date="selectedDate"
+              @reset-view="handleResetView"
+              :on-loading-change="handleWeatherLoading"
+            />
           </div>
 
           <div class="pt-6 border-t border-gray-800">

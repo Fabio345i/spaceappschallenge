@@ -111,6 +111,7 @@ import axios from 'axios'
 const props = defineProps({
   location: { type: Object, default: null },
   selectedDate: { type: Date, default: () => new Date() },
+  onLoadingChange: Function,
 })
 
 const isFuturePrediction = computed(() => {
@@ -190,6 +191,7 @@ async function fetchWeather(loc, date) {
   const day = String(d.getUTCDate()).padStart(2, "0")
   const dateStr = `${y}${m}${day}`
 
+  if (props.onLoadingChange) props.onLoadingChange(true)
   dataLoaded.value = false
 
   try {
@@ -206,10 +208,8 @@ async function fetchWeather(loc, date) {
       wind.value        = a.vent_moyen_m_s != null ? a.vent_moyen_m_s.toFixed(1) : "--"
       pressure.value    = a.pression_moy_kPa != null ? a.pression_moy_kPa.toFixed(1) : "--"
 
-      // ✅ Affiche le panneau même si la pluie échoue
       dataLoaded.value = true
 
-      // Pluie historique (peut échouer sans casser l’UI)
       try {
         const { data: r } = await axios.get("http://127.0.0.1:8000/weather/rainfall", {
           params: { lat: loc.lat, lon: loc.lon, start: dateStr, end: dateStr }
@@ -230,7 +230,7 @@ async function fetchWeather(loc, date) {
           day,
           month: m,
           base_years: 20,
-          future_year: y,       // ok si ton backend accepte l'année absolue (tu as un 200)
+          future_year: y,
           window_days: 3
         }
       })
@@ -243,10 +243,8 @@ async function fetchWeather(loc, date) {
       wind.value        = safe(p.vent_moyen_m_s)?.toFixed(1) ?? "--"
       pressure.value    = safe(p.pression_moy_kPa)?.toFixed(1) ?? "--"
 
-      // ✅ Affiche le panneau même si la pluie future n’existe pas
       dataLoaded.value = true
 
-      // Pluie future: NASA POWER n’en fournit pas → on tente, mais on n’échoue pas l’UI
       try {
         const { data: r } = await axios.get("http://127.0.0.1:8000/weather/rainfall", {
           params: { lat: loc.lat, lon: loc.lon, start: dateStr, end: dateStr }
@@ -262,8 +260,12 @@ async function fetchWeather(loc, date) {
     console.error("Erreur API principale :", e)
     temperature.value = tMin.value = tMax.value = humidity.value = wind.value = pressure.value = rain.value = "--"
     dataLoaded.value = false
+  } finally {
+    // ⚡ Fin du loading global
+    if (props.onLoadingChange) props.onLoadingChange(false)
   }
 }
+
 
 function generatePDF() {
   const doc = new jsPDF()

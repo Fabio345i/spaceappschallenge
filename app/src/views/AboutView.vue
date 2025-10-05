@@ -1,16 +1,10 @@
 <template>
-  <div class="about">
-    <h1>This is an about page</h1>
+  <div class="p-6 bg-gray-900 text-gray-100 min-h-screen">
+    <h1 class="text-2xl font-bold mb-4">Test affichage composant Weather</h1>
+    <Weather />
   </div>
 </template>
 
-
-<style>
-@media (min-width: 1024px) {
-  .about {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-  }
-}
-</style>
+<script setup>
+import Weather from '../components/Weather.vue'
+</script>

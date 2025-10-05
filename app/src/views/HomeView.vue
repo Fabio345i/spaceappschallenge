@@ -152,7 +152,13 @@ function handleResetView() {
         <div class="border-b border-gray-800 bg-gray-950">
           <div class="px-6 py-4">
             <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">Hourly Forecast</h2>
-            <HourlyForecast :selected-date="selectedDate" :location="target ? `${target.lat},${target.lon}` : 'Paris, France'" />
+<HourlyForecast
+  v-if="target"
+  :selected-date="selectedDate"
+  :latitude="target.lat"
+  :longitude="target.lon"
+  :location="`${target.lat}, ${target.lon}`"
+/>
           </div>
         </div>
         

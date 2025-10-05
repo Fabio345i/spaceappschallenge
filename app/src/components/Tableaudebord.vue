@@ -13,6 +13,30 @@
           {{ props.location?.lat.toFixed(2) }}° / {{ props.location?.lon.toFixed(2) }}°
         </p>
       </div>
+   
+      <!-- Bloc confiance -->
+      <div 
+        v-if="dataLoaded" 
+        class="mb-4 p-3 bg-gray-800/40 border border-gray-700 rounded-lg text-center"
+      >
+        <p class="text-xs text-gray-400 mb-1">
+          {{ isFuturePrediction ? 'Confiance de la prédiction' : 'La donnée est confirmée à' }}
+        </p>
+
+        <div class="text-sm font-semibold text-white mb-2">
+          {{ isFuturePrediction ? confiance + '%' : '100%' }}
+        </div>
+
+        <!-- Barre seulement pour les prédictions -->
+        <div v-if="isFuturePrediction" class="w-full bg-gray-700 rounded-full h-4">
+          <div
+            :style="{ width: confiance + '%', backgroundColor: couleurConfiance }"
+            class="h-4 rounded-full transition-all duration-500"
+          ></div>
+        </div>
+      </div>
+
+
 
       <!-- météo -->
       <div class="mt-6 bg-gray-800/40 border border-gray-700 rounded-lg p-5 m-2 text-center">
@@ -104,6 +128,31 @@ const props = defineProps({
   location: { type: Object, default: null },
   selectedDate: { type: Date, default: () => new Date() },
 })
+
+const isFuturePrediction = computed(() => {
+  const today = new Date()
+  const selected = new Date(props.selectedDate)
+  return selected > today
+})
+
+const k = 0.001
+
+const confiance = computed(() => {
+  if (!isFuturePrediction.value) return 100
+
+  const today = new Date()
+  const selected = new Date(props.selectedDate)
+  const joursFuturs = Math.max(0, Math.ceil((selected - today) / (1000 * 60 * 60 * 24)))
+
+  return Math.round(80 * Math.exp(-k * (joursFuturs - 1)))
+})
+
+const couleurConfiance = computed(() => {
+  if (confiance.value > 75) return '#22c55e'
+  if (confiance.value > 50) return '#facc15'
+  return '#ef4444'
+})
+
 const emit = defineEmits(['reset-view'])
 
 const temperature = ref('--')
@@ -158,6 +207,77 @@ async function fetchWeather(loc, date) {
     dataLoaded.value = true
   } catch (e) {
     console.error("Erreur API :", e)
+
+
+  try {
+    if (isPastOrTodayUTC(d)) {
+      // ---- Historique ----
+      const { data: a } = await axios.get("http://127.0.0.1:8000/algo/daily/analyse", {
+        params: { lat: loc.lat, lon: loc.lon, day, month: m, years: 20 }
+      })
+
+      temperature.value = a.T_moyenne != null ? a.T_moyenne.toFixed(1) : "--"
+      tMin.value        = a.Tmin_moyenne != null ? a.Tmin_moyenne.toFixed(1) : "--"
+      tMax.value        = a.Tmax_moyenne != null ? a.Tmax_moyenne.toFixed(1) : "--"
+      humidity.value    = a.humidite_moyenne != null ? a.humidite_moyenne.toFixed(0) : "--"
+      wind.value        = a.vent_moyen_m_s != null ? a.vent_moyen_m_s.toFixed(1) : "--"
+      pressure.value    = a.pression_moy_kPa != null ? a.pression_moy_kPa.toFixed(1) : "--"
+
+      // ✅ Affiche le panneau même si la pluie échoue
+      dataLoaded.value = true
+
+      // Pluie historique (peut échouer sans casser l’UI)
+      try {
+        const { data: r } = await axios.get("http://127.0.0.1:8000/weather/rainfall", {
+          params: { lat: loc.lat, lon: loc.lon, start: dateStr, end: dateStr }
+        })
+        const obj = r?.data || {}
+        rain.value = obj[dateStr] != null ? Number(obj[dateStr]).toFixed(1) : "--"
+      } catch (e) {
+        console.warn("Rainfall (historique) KO:", e)
+        rain.value = "--"
+      }
+
+    } else {
+      // ---- Futur (prédiction) ----
+      const { data: p } = await axios.get("http://127.0.0.1:8000/algo/daily/predict", {
+        params: {
+          lat: loc.lat,
+          lon: loc.lon,
+          day,
+          month: m,
+          base_years: 20,
+          future_year: y,       // ok si ton backend accepte l'année absolue (tu as un 200)
+          window_days: 3
+        }
+      })
+
+      const safe = v => (v != null && !Number.isNaN(Number(v))) ? Number(v) : null
+      temperature.value = safe(p.T_moyenne)?.toFixed(1) ?? "--"
+      tMin.value        = safe(p.Tmin_ajustee ?? p.Tmin_base)?.toFixed(1) ?? "--"
+      tMax.value        = safe(p.Tmax_ajustee ?? p.Tmax_base)?.toFixed(1) ?? "--"
+      humidity.value    = safe(p.humidite_moyenne)?.toFixed(0) ?? "--"
+      wind.value        = safe(p.vent_moyen_m_s)?.toFixed(1) ?? "--"
+      pressure.value    = safe(p.pression_moy_kPa)?.toFixed(1) ?? "--"
+
+      // ✅ Affiche le panneau même si la pluie future n’existe pas
+      dataLoaded.value = true
+
+      // Pluie future: NASA POWER n’en fournit pas → on tente, mais on n’échoue pas l’UI
+      try {
+        const { data: r } = await axios.get("http://127.0.0.1:8000/weather/rainfall", {
+          params: { lat: loc.lat, lon: loc.lon, start: dateStr, end: dateStr }
+        })
+        const obj = r?.data || {}
+        rain.value = obj[dateStr] != null ? Number(obj[dateStr]).toFixed(1) : "--"
+      } catch (e) {
+        console.warn("Rainfall (futur) indisponible:", e)
+        rain.value = "--"
+      }
+    }
+  } catch (e) {
+    console.error("Erreur API principale :", e)
+    temperature.value = tMin.value = tMax.value = humidity.value = wind.value = pressure.value = rain.value = "--"
     dataLoaded.value = false
   }
 }

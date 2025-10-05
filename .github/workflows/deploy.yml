@@ -28,7 +28,7 @@ jobs:
 
       - name: Build backend image
         run: |
-          docker build -t $DOCKER_USERNAME/backend:${{ env.TAG }} ./api
+          docker build -t $DOCKER_USERNAME/backend:${{ env.TAG }} -f ./api/Dockerfile .
           docker tag $DOCKER_USERNAME/backend:${{ env.TAG }} $DOCKER_USERNAME/backend:latest
 
       - name: Push backend image
@@ -53,7 +53,9 @@ jobs:
 
       - name: SSH and update VPS containers
         run: |
-          ssh -o StrictHostKeyChecking=no root@167.160.189.194 << EOF
+          ssh -o StrictHostKeyChecking=no root@167.160.189.194 << 'EOF'
+            DOCKER_USERNAME=fabio345i
+
             echo "Pulling latest images..."
             docker pull $DOCKER_USERNAME/backend:latest
             docker pull $DOCKER_USERNAME/frontend:latest

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import SearchBar from '@/components/SearchBar.vue'
 import GlobeCesium from '@/components/GlobeCesium.vue'
 import Tableaudebord from '@/components/Tableaudebord.vue'
@@ -187,6 +187,15 @@ function handleLocationSelected(location) {
   startGlobalLoading()
 }
 
+const showDisasterTicker = computed(() => {
+  const today = new Date()
+  const selected = new Date(selectedDate.value)
+
+  today.setHours(0, 0, 0, 0)
+  selected.setHours(0, 0, 0, 0)
+
+  return selected <= today
+})
 </script>
 
 <template>
@@ -249,17 +258,36 @@ function handleLocationSelected(location) {
       </nav>
     </header>
 
-    <div class="fixed top-16 left-0 right-0 z-40 bg-yellow-600 text-black overflow-hidden border-b-2 border-yellow-600">
-      <div class="h-10 flex items-center">
-        <div v-if="headlinesLoading" class="px-4 text-sm font-medium">Loading disaster alerts...</div>
-        <div v-else class="ticker-wrapper">
-          <div class="ticker-content">
-            <span v-for="(headline, index) in disasterHeadlines" :key="index" class="ticker-item" @click="handleHeadlineClick(headline)">
-              <span class="font-bold">ALERT:</span> {{ headline }}
-            </span>
-            <span v-for="(headline, index) in disasterHeadlines" :key="`dup-${index}`" class="ticker-item" @click="handleHeadlineClick(headline)">
-              <span class="font-bold">ALERT:</span> {{ headline }}
-            </span>
+    <div
+      class="fixed top-16 left-0 right-0 z-40 overflow-hidden"
+      :class="showDisasterTicker 
+        ? 'bg-yellow-600 text-black border-b-2 border-yellow-600' 
+        : 'bg-gray-900 text-white'"
+    >
+      <div class="h-10 flex items-center px-4">
+        <div v-if="showDisasterTicker">
+          <div v-if="headlinesLoading" class="text-sm font-medium">
+            Loading disaster alerts...
+          </div>
+          <div v-else class="ticker-wrapper">
+            <div class="ticker-content">
+              <span 
+                v-for="(headline, index) in disasterHeadlines" 
+                :key="index" 
+                class="ticker-item" 
+                @click="handleHeadlineClick(headline)"
+              >
+                <span class="font-bold">ALERT:</span> {{ headline }}
+              </span>
+              <span 
+                v-for="(headline, index) in disasterHeadlines" 
+                :key="`dup-${index}`" 
+                class="ticker-item" 
+                @click="handleHeadlineClick(headline)"
+              >
+                <span class="font-bold">ALERT:</span> {{ headline }}
+              </span>
+            </div>
           </div>
         </div>
       </div>

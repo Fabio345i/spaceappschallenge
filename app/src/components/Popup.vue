@@ -2,123 +2,66 @@
   <transition name="fade-slide">
     <div
       v-if="visible"
-      class="absolute top-4 right-4 z-50 w-80 rounded-2xl shadow-2xl border backdrop-blur-xl overflow-hidden max-h-[calc(100%-2rem)] overflow-y-auto"
-      :style="{
-        background: 'linear-gradient(135deg, rgba(17, 24, 39, 0.95) 0%, rgba(31, 41, 55, 0.95) 100%)',
-        borderColor: 'rgba(99, 102, 241, 0.3)',
-        color: '#F3F4F6',
-        boxShadow: '0 25px 50px -12px rgba(99, 102, 241, 0.25), 0 0 0 1px rgba(99, 102, 241, 0.1)'
-      }"
+      class="popup-container"
+      :style="{ left: position.x + 'px', top: position.y + 'px' }"
+      @mousedown.self="bringToFront"
     >
-      <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-purple-500/10 pointer-events-none"></div>
-      <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-400/50 to-transparent"></div>
-      
-      <div class="relative flex justify-between items-start p-4 border-b border-gray-700/50">
-        <div class="flex items-center gap-2">
-          <div class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
-          <h3 class="font-bold text-base bg-gradient-to-r from-white to-indigo-200 bg-clip-text text-transparent">
-            {{ title }}
-          </h3>
-        </div>
+      <!-- Header -->
+      <div class="popup-header" @mousedown="startDrag">
+        <h3 class="text-base font-semibold text-white truncate">{{ title }}</h3>
         <button
-          class="relative group text-gray-400 hover:text-white transition-all duration-300"
+          class="text-gray-400 hover:text-white transition"
           @click="$emit('close')"
-        >
-          <div class="absolute inset-0 bg-indigo-500/20 rounded-full scale-0 group-hover:scale-100 transition-transform duration-300"></div>
-          <span class="relative block w-6 h-6 flex items-center justify-center">✕</span>
-        </button>
+        >✕</button>
       </div>
 
-      <div class="relative p-4 border-b border-gray-700/50">
-        <div class="flex items-center gap-2 mb-2">
-          <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-xs">⛰️</div>
-          <div>
-            <h4 class="font-semibold text-sm text-white">Climat au Sommet</h4>
-            <p class="text-xs text-gray-400">{{ displayData.altitude_sommet }}m d'altitude</p>
-          </div>
+      <!-- Summit -->
+      <section class="popup-section">
+        <h4 class="section-title">Summit Climate</h4>
+        <p class="section-subtitle">{{ displayData.altitude_sommet }} m elevation</p>
+        <div class="grid grid-cols-2 gap-3">
+          <InfoBlock label="Temperature" :value="displayData.temperature_sommet + '°C'" />
+          <InfoBlock label="Wind" :value="displayData.vent_sommet + ' km/h'" />
+          <InfoBlock label="Precipitation" :value="displayData.precipitation_sommet + ' mm'" />
         </div>
-        <div class="grid grid-cols-2 gap-2">
-          <div class="bg-gray-800/50 rounded-lg p-2">
-            <p class="text-xs text-gray-400 mb-1">Température</p>
-            <p class="text-base font-bold text-blue-400">{{ displayData.temperature_sommet }}°C</p>
-          </div>
-          <div class="bg-gray-800/50 rounded-lg p-2">
-            <p class="text-xs text-gray-400 mb-1">Vent</p>
-            <p class="text-base font-bold text-cyan-400">{{ displayData.vent_sommet }} km/h</p>
-          </div>
-          <div class="bg-gray-800/50 rounded-lg p-2 col-span-2">
-            <p class="text-xs text-gray-400 mb-1">Précipitations</p>
-            <p class="text-base font-bold text-indigo-400">{{ displayData.precipitation_sommet }} mm</p>
-          </div>
-        </div>
-      </div>
+      </section>
 
-      <div class="relative p-4">
-        <div class="flex items-center gap-2 mb-2">
-          <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-xs">🏔️</div>
-          <div>
-            <h4 class="font-semibold text-sm text-white">Climat à la Base</h4>
-            <p class="text-xs text-gray-400">{{ displayData.altitude_base }}m d'altitude</p>
-          </div>
+      <!-- Base -->
+      <section class="popup-section">
+        <h4 class="section-title">Base Climate</h4>
+        <p class="section-subtitle">{{ displayData.altitude_base }} m elevation</p>
+        <div class="grid grid-cols-2 gap-3">
+          <InfoBlock label="Temperature" :value="displayData.temperature_base + '°C'" />
+          <InfoBlock label="Humidity" :value="displayData.humiditer_base + '%'" />
+          <InfoBlock label="Wind" :value="displayData.vent_base + ' km/h'" />
+          <InfoBlock label="Precipitation" :value="displayData.precipitation_base + ' mm'" />
         </div>
-        <div class="grid grid-cols-2 gap-2">
-          <div class="bg-gray-800/50 rounded-lg p-2">
-            <p class="text-xs text-gray-400 mb-1">Température</p>
-            <p class="text-base font-bold text-orange-400">{{ displayData.temperature_base }}°C</p>
-          </div>
-          <div class="bg-gray-800/50 rounded-lg p-2">
-            <p class="text-xs text-gray-400 mb-1">Humidité</p>
-            <p class="text-base font-bold text-teal-400">{{ displayData.humiditer_base }}%</p>
-          </div>
-          <div class="bg-gray-800/50 rounded-lg p-2">
-            <p class="text-xs text-gray-400 mb-1">Vent</p>
-            <p class="text-base font-bold text-cyan-400">{{ displayData.vent_base }} km/h</p>
-          </div>
-          <div class="bg-gray-800/50 rounded-lg p-2">
-            <p class="text-xs text-gray-400 mb-1">Précipitations</p>
-            <p class="text-base font-bold text-indigo-400">{{ displayData.precipitation_base }} mm</p>
-          </div>
-        </div>
-      </div>
+      </section>
 
-      <!-- Recommandation / Commentaire -->
-      <div class="relative p-4 border-t border-gray-700/50 bg-gradient-to-br from-gray-800/30 to-gray-900/30">
-        <div class="flex items-start gap-2">
-          <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-xs flex-shrink-0">💡</div>
-          <div>
-            <h4 class="font-semibold text-sm text-white mb-1">Recommandation</h4>
-            <p class="text-xs text-gray-300 leading-relaxed">
-              {{ displayRecommandation }}
-            </p>
-          </div>
-        </div>
-      </div>
-      
-      <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-50"></div>
+      <!-- Recommendation -->
+      <section class="popup-section border-t border-gray-700 mt-4 pt-3">
+        <h4 class="section-title">Recommendation</h4>
+        <p class="text-xs text-gray-300 leading-relaxed">
+          {{ displayRecommandation }}
+        </p>
+      </section>
     </div>
   </transition>
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, onBeforeUnmount } from 'vue'
+import InfoBlock from './InfoBlock.vue'
 
 const props = defineProps({
   visible: Boolean,
   title: String,
-  description: String,
-  climatData: {
-    type: Object,
-    default: null
-  },
-  recommandation: {
-    type: String,
-    default: null
-  }
-});
+  climatData: Object,
+  recommandation: String
+})
 
-defineEmits(["close"]);
+defineEmits(['close'])
 
-// Données de test temporaires (en attendant le backend)
 const fakeClimatData = {
   altitude_base: 265,
   altitude_sommet: 875,
@@ -127,42 +70,99 @@ const fakeClimatData = {
   vent_base: 12,
   precipitation_base: 0,
   temperature_sommet: 8,
-  vent_sommet: 28,
+  vent_sommet: 8,
   precipitation_sommet: 2
-};
+}
 
-// Recommandation de test (en attendant le backend)
-const fakeRecommandation = "✅ Conditions favorables pour l'ascension. Les températures sont douces et le vent modéré. Attention aux précipitations légères au sommet. Équipement recommandé : veste imperméable et bonnet.";
+const fakeRecommandation = 'Conditions look stable. Light wind, mild temps. Light precipitation at summit — dress accordingly.'
 
-// Utiliser les données de test si aucune donnée réelle n'est fournie
-const displayData = computed(() => props.climatData || fakeClimatData);
-const displayRecommandation = computed(() => props.recommandation || fakeRecommandation);
+const displayData = computed(() => props.climatData || fakeClimatData)
+const displayRecommandation = computed(() => props.recommandation || fakeRecommandation)
+
+const position = ref({ x: 200, y: 100 })
+let offset = { x: 0, y: 0 }
+let isDragging = false
+
+function startDrag(e) {
+  isDragging = true
+  offset.x = e.clientX - position.value.x
+  offset.y = e.clientY - position.value.y
+  document.addEventListener('mousemove', onDrag)
+  document.addEventListener('mouseup', stopDrag)
+}
+
+function onDrag(e) {
+  if (!isDragging) return
+  position.value = {
+    x: e.clientX - offset.x,
+    y: e.clientY - offset.y
+  }
+}
+
+function stopDrag() {
+  isDragging = false
+  document.removeEventListener('mousemove', onDrag)
+  document.removeEventListener('mouseup', stopDrag)
+}
+
+function bringToFront() {
+  // If you support multiple popups, set a higher z-index
+}
+
+onBeforeUnmount(() => stopDrag())
 </script>
 
 <style scoped>
+.popup-container {
+  position: absolute;
+  width: 360px;
+  background-color: #1f2937;
+  border-radius: 10px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  color: #f9fafb;
+  z-index: 9999;
+  user-select: none;
+}
+
+.popup-header {
+  background-color: #111827;
+  border-bottom: 1px solid #374151;
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: move;
+}
+
+.popup-section {
+  padding: 1rem;
+}
+
+.section-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #e5e7eb;
+  margin-bottom: 0.25rem;
+}
+
+.section-subtitle {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-bottom: 0.5rem;
+}
+
 .fade-slide-enter-active,
 .fade-slide-leave-active {
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s ease;
 }
+
 .fade-slide-enter-from {
   opacity: 0;
-  transform: translateY(-20px) scale(0.95);
+  transform: translateY(-20px);
 }
+
 .fade-slide-leave-to {
   opacity: 0;
-  transform: translateY(-20px) scale(0.95);
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  transform: translateY(-20px);
 }
 </style>

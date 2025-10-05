@@ -8,7 +8,8 @@ import {
   Color,
   Cartesian3,
   HeadingPitchRange,
-  ScreenSpaceEventType
+  ScreenSpaceEventType,
+  ScreenSpaceEventHandler
 } from 'cesium'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
 
@@ -20,9 +21,13 @@ const props = defineProps({
 })
 
 const cesiumContainer = ref(null)
-let viewer
+let viewer = null
 let cityDataSource = null
 let markerEntity = null
+const showPopup = ref(false);
+const popupTitle = ref('');
+const climatData = ref(null);
+
 
 async function fetchOsmBoundary(osmId) {
   try {
@@ -37,7 +42,7 @@ async function fetchOsmBoundary(osmId) {
 }
 
 onMounted(() => {
-  viewer = new Viewer(cesiumContainer.value, {
+   viewer = new Viewer(cesiumContainer.value, {
     baseLayerPicker: false,
     geocoder: false,
     timeline: false,
@@ -57,29 +62,25 @@ onMounted(() => {
     destination: Cartesian3.fromDegrees(-95, 50, 9000000)
   })
 
-  handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas)
+  const handler = new ScreenSpaceEventHandler(viewer.scene.canvas)
   handler.setInputAction((mouvement) => {
-    picked = viewer.scene.pick(mouvement.position)
-    if(Cesium.defined(picked) && picked.id){
-    entiter = picked.id
     // Attribuer les données
-      popupTitle.value = montagne.name || 'Mont-Tremblant';
+      popupTitle.value = "Nom de la montagne";
       
       climatData.value = {
-        altitude_base: montagne.altitude_base || 265,
-        altitude_sommet: montagne.altitude_sommet || 875,
-        temperature_base: montagne.temperature_base || 15,
-        humiditer_base: montagne.humiditer_base || 65,
-        vent_base: montagne.vent_base || 12,
-        precipitation_base: montagne.precipitation_base || 0,
-        temperature_sommet: montagne.temperature_sommet || 8,
-        vent_sommet: montagne.vent_sommet || 28,
-        precipitation_sommet: montagne.precipitation_sommet || 2
-      };
-      
-      showPopup.value = true;
-    }
-  }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+        altitude_base: 265,
+        altitude_sommet: 875,
+        temperature_base: 15,
+        humiditer_base: 65,
+        vent_base: 12,
+        precipitation_base: 0,
+        temperature_sommet: 8,
+        vent_sommet: 8,
+        precipitation_sommet: 2,
+      }
+
+      showPopup.value = true
+    }, ScreenSpaceEventType.LEFT_CLICK);
 })
 
 watch(
@@ -156,8 +157,6 @@ watch(
 </script>
 
 <template>
-  <div ref="cesiumContainer" class="globe"></div>
-
   <InfoPopup
     :visible="showPopup"
     :title="popupTitle"
@@ -173,11 +172,6 @@ watch(
 
 
 <style scoped>
-.globe-wrapper {
-  width: 100%;
-  height: 100%;
-  padding: 16px;
-}
 
 .globe {
   width: 100%;

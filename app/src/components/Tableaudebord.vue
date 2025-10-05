@@ -50,26 +50,20 @@
 
 <script setup>
 import { ref, computed, watch } from "vue"
-
 import { jsPDF } from "jspdf"
-
 const generatePDF = () => {
   const doc = new jsPDF()
-
   
   doc.setFont("helvetica", "bold")
   doc.setFontSize(20)
   doc.text(" Rapport meteo", 105, 20, { align: "center" })
-
   
   doc.setLineWidth(0.5)
   doc.line(20, 25, 190, 25)
-
   
   doc.setFontSize(12)
   doc.setFont("helvetica", "normal")
   doc.text("Date du rapport : " + new Date().toLocaleDateString(), 20, 35)
-
   
   const data = [
     ["Température", "25°C"],
@@ -78,24 +72,18 @@ const generatePDF = () => {
     ["Qualité de l’air", "Bonne"],
     ["Humidité", "65%"],
   ]
-
   let y = 50
   doc.setFont("helvetica", "bold")
   doc.text("Résumé des conditions :", 20, y)
   y += 8
-
   doc.setFont("helvetica", "normal")
-
   data.forEach(([label, value]) => {
     doc.text(`• ${label} :`, 25, y)
     doc.text(value, 90, y)
     y += 8
   })
-
-
   doc.setFontSize(10)
   doc.setTextColor(100)
-
   doc.save("rapport_meteo.pdf")
 }
 

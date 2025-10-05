@@ -196,7 +196,11 @@ function handleResetView() {
             <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">
               Weather Summary
             </h2>
-            <Tableaudebord :location="target" @reset-view="handleResetView" />
+            <Tableaudebord
+  :location="target"
+  :selected-date="selectedDate"
+  @reset-view="handleResetView"
+/>
           </div>
 
           <div class="pt-6 border-t border-gray-800">

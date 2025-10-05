@@ -33,3 +33,4 @@ def merra2_subset(req: SubsetRequest):
     json_data = nc_to_json(nc_urls[0])
     return {"urls": urls, "data": json_data}
 
+

@@ -5,6 +5,8 @@ import GlobeCesium from '@/components/GlobeCesium.vue'
 import Tableaudebord from '@/components/Tableaudebord.vue'
 import Calendar from '@/components/Calendar.vue'
 import HourlyForecast from '@/components/HourlyForecast.vue'
+import TutorialDriver from '@/components/tutorial/TutorialDriver.vue'
+const tutorial = ref(null)
 
 const target = ref(null)
 const mobileMenuOpen = ref(false)
@@ -34,6 +36,7 @@ function handleResetView() {
 </script>
 
 <template>
+  <TutorialDriver ref="tutorial" />
   <div class="flex flex-col h-screen w-full bg-black text-gray-100">
     
     <header class="fixed top-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800">
@@ -50,6 +53,13 @@ function handleResetView() {
             <a href="#" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">
               Home
             </a>
+
+            <button 
+  @click="tutorial?.startTutorial()"
+  class="text-gray-400 hover:text-white transition-colors text-sm font-medium"
+>
+  Tutorial
+</button>
             
             <div class="relative">
               <button 

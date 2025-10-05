@@ -225,7 +225,7 @@ watch(selectedDate, () => {
       </nav>
     </header>
 
-    <div class="fixed top-16 left-0 right-0 z-40 bg-yellow-500 text-black overflow-hidden border-b-2 border-yellow-600">
+    <div class="fixed top-16 left-0 right-0 z-40 bg-yellow-600 text-black overflow-hidden border-b-2 border-yellow-600">
       <div class="h-10 flex items-center">
         <div v-if="headlinesLoading" class="px-4 text-sm font-medium">
           Loading disaster alerts...
@@ -333,4 +333,41 @@ watch(selectedDate, () => {
   height: 100%;
 }
 
+
+.ticker-wrapper {
+  width: 100%;
+  overflow: hidden;
+}
+
+.ticker-content {
+  display: flex;
+  white-space: nowrap;
+  animation: scroll 60s linear infinite;
+}
+
+.ticker-item {
+  display: inline-block;
+  padding: 0 3rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.ticker-item:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.ticker-content:hover {
+  animation-play-state: paused;
+}
 </style>

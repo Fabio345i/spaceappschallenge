@@ -7,7 +7,8 @@ import {
   GeoJsonDataSource,
   Color,
   Cartesian3,
-  HeadingPitchRange
+  HeadingPitchRange,
+  ScreenSpaceEventType
 } from 'cesium'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
 
@@ -43,7 +44,7 @@ onMounted(() => {
     animation: false,
     terrainProvider: new EllipsoidTerrainProvider()
   })
-
+  
   viewer.imageryLayers.removeAll()
   viewer.imageryLayers.addImageryProvider(
     new UrlTemplateImageryProvider({
@@ -55,6 +56,30 @@ onMounted(() => {
   viewer.camera.flyTo({
     destination: Cartesian3.fromDegrees(-95, 50, 9000000)
   })
+
+  handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas)
+  handler.setInputAction((mouvement) => {
+    picked = viewer.scene.pick(mouvement.position)
+    if(Cesium.defined(picked) && picked.id){
+    entiter = picked.id
+    // Attribuer les données
+      popupTitle.value = montagne.name || 'Mont-Tremblant';
+      
+      climatData.value = {
+        altitude_base: montagne.altitude_base || 265,
+        altitude_sommet: montagne.altitude_sommet || 875,
+        temperature_base: montagne.temperature_base || 15,
+        humiditer_base: montagne.humiditer_base || 65,
+        vent_base: montagne.vent_base || 12,
+        precipitation_base: montagne.precipitation_base || 0,
+        temperature_sommet: montagne.temperature_sommet || 8,
+        vent_sommet: montagne.vent_sommet || 28,
+        precipitation_sommet: montagne.precipitation_sommet || 2
+      };
+      
+      showPopup.value = true;
+    }
+  }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 })
 
 watch(
@@ -63,6 +88,7 @@ watch(
     if (!val || !viewer) return
 
     if (cityDataSource) {
+      console.log(cityDataSource);
       viewer.dataSources.remove(cityDataSource, true)
       cityDataSource = null
     }
@@ -76,7 +102,6 @@ watch(
     if (val.geojson) {
       geojsonToLoad = val.geojson
     }
-
     else if (val.osm_id) {
       geojsonToLoad = await fetchOsmBoundary(val.osm_id)
     }
@@ -91,8 +116,8 @@ watch(
       }
 
       cityDataSource = await GeoJsonDataSource.load(geojsonToLoad, {
-        stroke: Color.fromCssColorString('#FF4081'),
-        fill: Color.fromCssColorString('#FF4081').withAlpha(0.15),
+        stroke: Color.fromCssColorString('#6b7280'),
+        fill: Color.fromCssColorString('#6b7280').withAlpha(0.2),
         strokeWidth: 2
       })
       viewer.dataSources.add(cityDataSource)
@@ -106,7 +131,6 @@ watch(
       }
     }
 
-    // 🔵 Ajout du pin central
     if (val.lat && val.lon) {
       markerEntity = viewer.entities.add({
         position: Cartesian3.fromDegrees(val.lon, val.lat),
@@ -127,15 +151,44 @@ watch(
   },
   { deep: true }
 )
+
+
 </script>
 
 <template>
   <div ref="cesiumContainer" class="globe"></div>
+
+  <InfoPopup
+    :visible="showPopup"
+    :title="popupTitle"
+    :climatData="climatData"
+    @close="showPopup = false"
+  />
+
+  <div class="globe-wrapper">
+    <div ref="cesiumContainer" class="globe"></div>
+  </div>
 </template>
 
+
+
 <style scoped>
+.globe-wrapper {
+  width: 100%;
+  height: 100%;
+  padding: 16px;
+}
+
 .globe {
   width: 100%;
-  height: 100vh;
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #374151;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 </style>
+
+
+
+

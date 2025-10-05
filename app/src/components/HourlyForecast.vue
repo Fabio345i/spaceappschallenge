@@ -76,13 +76,21 @@ const fetchPrecipitation = async () => {
   totalRain.value = 0
 
   try {
-    const date = props.selectedDate.toISOString().split("T")[0]
-    const res = await axios.get(
-      `http://127.0.0.1:8000/weather/rainfall?start_date=${date}&end_date=${date}&latitude=${props.latitude}&longitude=${props.longitude}`
-    )
+    // ✅ date sans tirets
+    const date = props.selectedDate.toISOString().split("T")[0].replace(/-/g, "")
 
-    const nasaData = res.data?.data || []
-    totalRain.value = nasaData.length ? nasaData[0].data : 0
+    // ✅ on passe les bons noms de params
+    const res = await axios.get("http://127.0.0.1:8000/weather/rainfall", {
+      params: {
+        lat: props.latitude,
+        lon: props.longitude,
+        start: date,
+        end: date
+      }
+    })
+
+    const nasaData = res.data?.data || {}
+    totalRain.value = nasaData[date] ?? 0
   } catch (err) {
     console.error("API Error:", err)
     error.value = "Error"
@@ -90,6 +98,7 @@ const fetchPrecipitation = async () => {
     loading.value = false
   }
 }
+
 
 watch(
   () => [props.selectedDate, props.latitude, props.longitude],

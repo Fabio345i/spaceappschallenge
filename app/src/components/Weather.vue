@@ -1,6 +1,6 @@
 <template>
   <div class="p-6 bg-gray-900 text-gray-100 min-h-screen">
-    <h2 class="text-3xl font-bold mb-8 text-center">🌦️ Données de précipitations NASA</h2>
+    <h2 class="text-3xl font-bold mb-8 text-center">Données de précipitations NASA</h2>
 
     <div class="flex flex-wrap justify-center gap-4 mb-8">
       <input v-model="startDate" type="date" class="input-field" />
@@ -125,16 +125,49 @@ const fetchRainData = async () => {
     const res = await axios.get(
       `http://127.0.0.1:8000/weather/rainfall?start_date=${startDate.value}&end_date=${endDate.value}&latitude=${latitude.value}&longitude=${longitude.value}`
     )
-    console.log("✅ Données brutes reçues :", res.data) // <--- ajoute ça
-weatherData.value = res.data.data
-    console.log("✅ Données NASA :", weatherData.value)
+    const today = new Date()
+    const end = new Date(endDate.value)
+
+    weatherData.value = res.data.data
+
+    // 🔮 Si la date de fin est dans le futur, on ajoute une estimation
+    if (end >= today) {
+      const forecast = generateForecast(startDate.value, endDate.value, weatherData.value)
+      weatherData.value = [...weatherData.value, ...forecast]
+    }
+
   } catch (err) {
-    error.value = "Impossible de charger les données météo."
+    error.value = "Impossible de charger les données météo du passé."
     console.error(err)
   } finally {
     loading.value = false
   }
 }
+
+const generateForecast = (start, end, data) => {
+  const today = new Date()
+  const startDate = new Date(start)
+  const endDate = new Date(end)
+
+  const pastData = data.filter(item => new Date(item.time) <= today)
+
+
+  const avg =
+    pastData.reduce((sum, item) => sum + item.data, 0) / pastData.length || 0
+
+  
+  const futureDays = []
+  for (let d = new Date(today); d <= endDate; d.setDate(d.getDate() + 1)) {
+    futureDays.push({
+      time: new Date(d),
+      data: avg,
+      isForecast: true,
+    })
+  }
+
+  return futureDays
+}
+
 </script>
 
 <style scoped>

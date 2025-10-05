@@ -87,48 +87,6 @@ onMounted(() => {
     destination: Cartesian3.fromDegrees(-95, 50, 9000000)
   })
 
-  const handler = new ScreenSpaceEventHandler(viewer.scene.canvas)
-handler.setInputAction((movement) => {
-  const wrapper = globeWrapper.value
-  if (!wrapper) return
-
-  const wrapperRect = wrapper.getBoundingClientRect()
-
-  const header  = document.querySelector('header')
-  const sidenav = document.querySelector('.sidenav') || document.querySelector('aside')
-  const headerBottom = header ? header.getBoundingClientRect().bottom : 0
-  const sideRight    = sidenav ? sidenav.getBoundingClientRect().right : 0
-
-  // Position du clic dans le viewport
-  const clickViewportX = movement.position.x
-  const clickViewportY = movement.position.y
-
-  // Conversion : viewport -> coordonnées locales du wrapper
-  let popupX = clickViewportX - wrapperRect.left - (POPUP_WIDTH / 2)
-  let popupY = clickViewportY - wrapperRect.top - POPUP_HEIGHT - 20
-
-  const minX = sideRight - wrapperRect.left + PADDING
-  const minY = headerBottom - wrapperRect.top + PADDING
-  const maxX = wrapperRect.width  - POPUP_WIDTH  - PADDING
-  const maxY = wrapperRect.height - POPUP_HEIGHT - PADDING
-
-  // Si "au-dessus" sort en haut => on met en dessous
-  if (popupY < minY) popupY = clickViewportY - wrapperRect.top + 20
-
-  // Clamp final
-  popupX = Math.min(Math.max(popupX, minX), maxX)
-  popupY = Math.min(Math.max(popupY, minY), maxY)
-
-  popupPosition.value = {
-    top:  `${popupY}px`,
-    left: `${popupX}px`
-  }
-
-  popupTitle.value = "Nom de la montagne"
-  climatData.value = { /* ... */ }
-  showPopup.value = true
-}, ScreenSpaceEventType.LEFT_CLICK)
-
 })
 
 watch(

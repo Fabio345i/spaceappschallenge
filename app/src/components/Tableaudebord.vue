@@ -13,8 +13,9 @@
           {{ props.location?.lat.toFixed(2) }}° / {{ props.location?.lon.toFixed(2) }}°
         </p>
       </div>
+
 <!-- Résumé météo -->
-<div class="mt-6 bg-gray-800/40 border border-gray-700 rounded-lg p-4 text-center">
+<div class="mt-6 bg-gray-800/40 border border-gray-700 rounded-lg p-5 m-2 text-center">
   <p class="text-sm font-medium text-white mb-1">Analyse rapide</p>
   <p class="text-gray-300 text-sm leading-relaxed">
     {{ weatherSummary }}
@@ -382,7 +383,7 @@ function generatePDF() {
 }
 
 function resetView() {
-  emit('reset-view')
+  emit('reset-view') // si tu veux aussi réinitialiser quelque chose dans le parent
 }
 
 // Analyse du dashboard pour ux

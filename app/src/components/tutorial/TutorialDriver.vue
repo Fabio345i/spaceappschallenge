@@ -157,7 +157,7 @@ function startTutorial() {
 
       setTimeout(() => {
         const finalDriver = driver({
-          showProgress: false,
+          showProgress: true,
           steps: [
             {
               popover: {

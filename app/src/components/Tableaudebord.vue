@@ -198,32 +198,20 @@ watch(() => [props.location, props.selectedDate], ([loc, date]) => {
   else dataLoaded.value = false
 }, { deep: true })
 
+function isPastOrTodayUTC(date) {
+  const today = new Date()
+  const dUTC = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()))
+  const tUTC = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()))
+  return dUTC.getTime() <= tUTC.getTime()
+}
+
 async function fetchWeather(loc, date) {
-  try {
-    const d = new Date(date)
-    const y = d.getUTCFullYear()
-    const m = String(d.getUTCMonth() + 1).padStart(2, "0")
-    const day = String(d.getUTCDate()).padStart(2, "0")
-    const dateStr = `${y}${m}${day}`
-    dataLoaded.value = false
-
-    const { data } = await axios.get("http://127.0.0.1:8000/algo/daily/analyse", {
-      params: { lat: loc.lat, lon: loc.lon, day, month: m, years: 20 }
-    })
-    const a = data || {}
-
-    temperature.value = a.T_moyenne?.toFixed(1) ?? "--"
-    tMin.value = a.Tmin_moyenne?.toFixed(1) ?? "--"
-    tMax.value = a.Tmax_moyenne?.toFixed(1) ?? "--"
-    humidity.value = a.humidite_moyenne?.toFixed(0) ?? "--"
-    wind.value = a.vent_moyen_m_s?.toFixed(1) ?? "--"
-    pressure.value = a.pression_moy_kPa?.toFixed(1) ?? "--"
-    rain.value = (a.precipitation_totale ?? 0).toFixed(1)
-
-    dataLoaded.value = true
-  } catch (e) {
-    console.error("Erreur API :", e)
-
+  const d = new Date(date)
+  const y = d.getUTCFullYear()
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0")
+  const day = String(d.getUTCDate()).padStart(2, "0")
+  const dateStr = `${y}${m}${day}`
+  dataLoaded.value = false
 
   try {
     if (isPastOrTodayUTC(d)) {
@@ -239,10 +227,9 @@ async function fetchWeather(loc, date) {
       wind.value        = a.vent_moyen_m_s != null ? a.vent_moyen_m_s.toFixed(1) : "--"
       pressure.value    = a.pression_moy_kPa != null ? a.pression_moy_kPa.toFixed(1) : "--"
 
-      // ✅ Affiche le panneau même si la pluie échoue
       dataLoaded.value = true
 
-      // Pluie historique (peut échouer sans casser l’UI)
+      // Pluie historique (optionnelle)
       try {
         const { data: r } = await axios.get("http://127.0.0.1:8000/weather/rainfall", {
           params: { lat: loc.lat, lon: loc.lon, start: dateStr, end: dateStr }
@@ -255,17 +242,9 @@ async function fetchWeather(loc, date) {
       }
 
     } else {
-      // ---- Futur (prédiction) ----
+      // ---- Futur ----
       const { data: p } = await axios.get("http://127.0.0.1:8000/algo/daily/predict", {
-        params: {
-          lat: loc.lat,
-          lon: loc.lon,
-          day,
-          month: m,
-          base_years: 20,
-          future_year: y,       // ok si ton backend accepte l'année absolue (tu as un 200)
-          window_days: 3
-        }
+        params: { lat: loc.lat, lon: loc.lon, day, month: m, base_years: 20, future_year: y, window_days: 3 }
       })
 
       const safe = v => (v != null && !Number.isNaN(Number(v))) ? Number(v) : null
@@ -276,10 +255,8 @@ async function fetchWeather(loc, date) {
       wind.value        = safe(p.vent_moyen_m_s)?.toFixed(1) ?? "--"
       pressure.value    = safe(p.pression_moy_kPa)?.toFixed(1) ?? "--"
 
-      // ✅ Affiche le panneau même si la pluie future n’existe pas
       dataLoaded.value = true
 
-      // Pluie future: NASA POWER n’en fournit pas → on tente, mais on n’échoue pas l’UI
       try {
         const { data: r } = await axios.get("http://127.0.0.1:8000/weather/rainfall", {
           params: { lat: loc.lat, lon: loc.lon, start: dateStr, end: dateStr }
@@ -297,6 +274,7 @@ async function fetchWeather(loc, date) {
     dataLoaded.value = false
   }
 }
+
 
 const weatherSummary = computed(() => {
   const t = Number(temperature.value)

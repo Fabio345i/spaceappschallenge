@@ -1,45 +1,36 @@
 <template>
-  <div class="px-4 py-3">
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-sm font-medium text-white">
-        Precipitation Forecast - {{ formattedDate }}
+  <div class="px-4 py-2">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-xs font-medium text-gray-400 uppercase tracking-wide">
+        Precipitation - {{ formattedDate }}
       </h2>
     </div>
 
-    <div v-if="loading" class="text-center py-8 text-gray-400">
-      Loading precipitation data...
+    <div v-if="loading" class="text-center py-4 text-gray-500 text-xs">
+      Loading...
     </div>
 
-    <div v-else-if="error" class="text-center text-red-500 py-8">
+    <div v-else-if="error" class="text-center text-red-500 py-4 text-xs">
       {{ error }}
     </div>
 
-    <div v-else-if="periods.length" class="grid grid-cols-4 gap-3">
+    <div v-else-if="periods.length" class="grid grid-cols-4 gap-2">
       <div
         v-for="period in periods"
         :key="period.label"
-        class="relative p-4 rounded-lg bg-gray-900 border border-gray-800 text-center"
+        class="p-3 rounded bg-gray-900 border border-gray-800 text-center"
       >
-        <p class="text-xs font-medium text-blue-400 mb-3">{{ period.label }}</p>
+        <p class="text-xs text-gray-500 mb-2">{{ period.label }}</p>
         
-        <div class="my-3">
-          <svg class="w-8 h-8 mx-auto mb-2" :class="period.rain > 0 ? 'text-blue-400' : 'text-gray-600'" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M10 3.5a.5.5 0 01.5.5v1a.5.5 0 01-1 0V4a.5.5 0 01.5-.5zm-3 8a.5.5 0 01.5.5v3a.5.5 0 01-1 0v-3a.5.5 0 01.5-.5zm6 0a.5.5 0 01.5.5v3a.5.5 0 01-1 0v-3a.5.5 0 01.5-.5zm-3-1a.5.5 0 01.5.5v4a.5.5 0 01-1 0v-4a.5.5 0 01.5-.5z"/>
-          </svg>
-          <p class="text-2xl font-bold" :class="period.rain > 0 ? 'text-blue-400' : 'text-gray-500'">
-            {{ period.rain.toFixed(1) }}
-          </p>
-          <p class="text-xs text-gray-500 mt-1">mm</p>
-        </div>
-
-        <p class="text-xs" :class="period.rain > 0 ? 'text-blue-300' : 'text-gray-600'">
-          {{ period.rain > 2 ? 'Heavy' : period.rain > 0.5 ? 'Moderate' : 'No rain' }}
+        <p class="text-lg font-semibold text-white">
+          {{ period.rain.toFixed(1) }}
         </p>
+        <p class="text-xs text-gray-600">mm</p>
       </div>
     </div>
 
-    <div v-else class="text-center text-gray-500 py-8">
-      No precipitation data available
+    <div v-else class="text-center text-gray-600 py-4 text-xs">
+      No data
     </div>
   </div>
 </template>
@@ -61,7 +52,6 @@ const error = ref("")
 
 const formattedDate = computed(() => {
   return props.selectedDate?.toLocaleDateString("en-US", {
-    weekday: "short",
     month: "short",
     day: "numeric",
   })
@@ -71,10 +61,10 @@ const periods = computed(() => {
   const rainPerPeriod = totalRain.value / 4
   
   return [
-    { label: "Night", time: "00:00 - 06:00", rain: rainPerPeriod + (Math.random() * 0.5 - 0.25) },
-    { label: "Morning", time: "06:00 - 12:00", rain: rainPerPeriod + (Math.random() * 0.5 - 0.25) },
-    { label: "Afternoon", time: "12:00 - 18:00", rain: rainPerPeriod + (Math.random() * 0.5 - 0.25) },
-    { label: "Evening", time: "18:00 - 00:00", rain: rainPerPeriod + (Math.random() * 0.5 - 0.25) },
+    { label: "Night", rain: rainPerPeriod + (Math.random() * 0.5 - 0.25) },
+    { label: "Morning", rain: rainPerPeriod + (Math.random() * 0.5 - 0.25) },
+    { label: "Afternoon", rain: rainPerPeriod + (Math.random() * 0.5 - 0.25) },
+    { label: "Evening", rain: rainPerPeriod + (Math.random() * 0.5 - 0.25) },
   ].map(p => ({ ...p, rain: Math.max(0, p.rain) }))
 })
 
@@ -95,7 +85,7 @@ const fetchPrecipitation = async () => {
     totalRain.value = nasaData.length ? nasaData[0].data : 0
   } catch (err) {
     console.error("API Error:", err)
-    error.value = "Unable to load precipitation data"
+    error.value = "Error"
   } finally {
     loading.value = false
   }

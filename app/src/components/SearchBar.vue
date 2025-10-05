@@ -42,7 +42,7 @@ function selectPlace(place) {
       v-model="query"
       @input="fetchSuggestions"
       @keyup.enter="suggestions.length && selectPlace(suggestions[0])"
-      placeholder="Entrez une ville ou montagne"
+      placeholder="Search for a location..."
     />
     <ul v-if="suggestions.length" class="suggestions">
       <li
@@ -58,38 +58,77 @@ function selectPlace(place) {
 
 <style scoped>
 .search-bar {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 10;
-  background: white;
-  border-radius: 6px;
-  width: 300px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  position: relative;
+  width: 100%;
 }
+
 input {
   width: 100%;
-  padding: 8px 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px 6px 0 0;
+  padding: 12px 16px;
+  border: 1px solid #374151;
+  border-radius: 8px;
   font-size: 14px;
+  background: #1f2937;
+  color: #f3f4f6;
+  transition: all 0.2s ease;
 }
+
+input::placeholder {
+  color: #6b7280;
+}
+
+input:focus {
+  outline: none;
+  border-color: #4b5563;
+  background: #111827;
+}
+
 .suggestions {
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: 200px;
+  max-height: 300px;
   overflow-y: auto;
-  border: 1px solid #ccc;
+  border: 1px solid #374151;
   border-top: none;
+  background: #1f2937;
+  border-radius: 0 0 8px 8px;
+  margin-top: -8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
+
 .suggestions li {
-  padding: 6px 8px;
+  padding: 10px 16px;
   cursor: pointer;
-  background: white;
-  color: black;
+  color: #d1d5db;
+  font-size: 13px;
+  transition: background 0.15s ease;
+  border-bottom: 1px solid #374151;
 }
+
+.suggestions li:last-child {
+  border-bottom: none;
+}
+
 .suggestions li:hover {
-  background: #f0f0f0;
+  background: #374151;
+  color: #ffffff;
+}
+
+.suggestions::-webkit-scrollbar {
+  width: 6px;
+}
+
+.suggestions::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+.suggestions::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 3px;
+}
+
+.suggestions::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
 }
 </style>

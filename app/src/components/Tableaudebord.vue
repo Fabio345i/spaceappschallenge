@@ -15,26 +15,42 @@
       </div>
    
       <!-- Bloc confiance -->
-      <div 
-        v-if="dataLoaded" 
-        class="mb-4 p-3 bg-gray-800/40 border border-gray-700 rounded-lg text-center"
-      >
-        <p class="text-xs text-gray-400 mb-1">
-          {{ isFuturePrediction ? 'Confiance de la prédiction' : 'La donnée est confirmée à' }}
-        </p>
+<!-- Bloc Confiance -->
+<div
+  v-if="dataLoaded"
+  class="mb-4 p-4 rounded-xl border border-gray-700 bg-gradient-to-br from-gray-800/60 to-gray-900/40 text-center relative overflow-hidden"
+>
+  <!-- Effet léger d'arrière-plan animé -->
+  <div class="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_30%_20%,#3b82f6,transparent_70%)] pointer-events-none"></div>
 
-        <div class="text-sm font-semibold text-white mb-2">
-          {{ isFuturePrediction ? confiance + '%' : '100%' }}
-        </div>
+  <p class="text-xs font-semibold tracking-wide uppercase mb-1 text-gray-300">
+    {{ isFuturePrediction ? 'Confiance de la prédiction' : 'Données confirmées' }}
+  </p>
 
-        <!-- Barre seulement pour les prédictions -->
-        <div v-if="isFuturePrediction" class="w-full bg-gray-700 rounded-full h-4">
-          <div
-            :style="{ width: confiance + '%', backgroundColor: couleurConfiance }"
-            class="h-4 rounded-full transition-all duration-500"
-          ></div>
-        </div>
-      </div>
+  <div class="text-2xl mb-3"
+       :class="isFuturePrediction ? '' : 'text-green-400'">
+    {{ isFuturePrediction ? confiance + '%' : '100%' }}
+  </div>
+
+  <!-- Barre de progression -->
+  <div class="w-full bg-gray-700/50 rounded-full h-4 overflow-hidden">
+    <div
+      :style="{
+        width: confiance + '%',
+        background: `linear-gradient(90deg, ${couleurConfiance}, #60a5fa)`
+      }"
+      class="h-4 rounded-full transition-all duration-700 shadow-[0_0_10px_var(--tw-shadow-color)]"
+     
+    ></div>
+  </div>
+
+  <!-- Légende -->
+  <p class="mt-2 text-xs text-gray-400">
+    {{ isFuturePrediction
+      ? 'Plus la date est éloignée, moins la précision est garantie'
+      : 'Ces données proviennent de l’historique réel' }}
+  </p>
+</div>
 
 
 

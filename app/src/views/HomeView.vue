@@ -8,6 +8,9 @@ import HourlyForecast from '@/components/HourlyForecast.vue'
 import TutorialDriver from '@/components/tutorial/TutorialDriver.vue'
 
 const tutorial = ref(null)
+import router from '@/router'
+import { onMounted } from 'vue'
+import axios from 'axios'
 const disasterHeadlines = ref([])
 const headlinesLoading = ref(true)
 
@@ -16,15 +19,73 @@ const mobileMenuOpen = ref(false)
 const favoritesOpen = ref(false)
 const resetTrigger = ref(0)
 
-const favorites = ref([
-  { name: 'New York, USA', lat: 40.7128, lon: -74.006 },
-  { name: 'Paris, France', lat: 48.8566, lon: 2.3522 },
-  { name: 'Tokyo, Japan', lat: 35.6762, lon: 139.6503 },
-])
+const isAuthenticated = ref(!!localStorage.getItem("token"))
+
+const favorites = ref([])
+
+onMounted(async () => {
+  if (!isAuthenticated.value) return
+  try {
+    const token = localStorage.getItem("token")
+    const { data } = await axios.get("http://localhost:8000/auth/favorites", {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    favorites.value = data
+  } catch (err) {
+    console.error("Failed to fetch favorites", err)
+  }
+})
+
+function handleLocationSelected(location) {
+  target.value = location
+}
+
+async function addFavorite(location) {
+  if (!isAuthenticated.value) {
+    router.push('/login')
+    return
+  }
+
+  const name =
+    location.city || 
+    location.town || 
+    location.village || 
+    location.display_name || 
+    `${location.lat.toFixed(2)}, ${location.lon.toFixed(2)}`
+
+  const exists = favorites.value.some(f => f.name === name)
+  if (exists) return
+
+  const favorite = { name, lat: location.lat, lon: location.lon }
+
+  try {
+    const token = localStorage.getItem("token")
+    await axios.post("http://localhost:8000/auth/favorites", favorite, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    favorites.value.push(favorite)
+  } catch (err) {
+    console.error("Failed to add favorite", err)
+  }
+}
+
+function toggleFavorites() {
+  if (!isAuthenticated.value) {
+    router.push('/login')
+    return
+  }
+  favoritesOpen.value = !favoritesOpen.value
+}
 
 function selectFavorite(fav) {
   target.value = { lat: fav.lat, lon: fav.lon }
   favoritesOpen.value = false
+}
+
+function logout() {
+  localStorage.removeItem("token")
+  isAuthenticated.value = false
+  router.push("/")
 }
 
 const selectedDate = ref(new Date())
@@ -122,8 +183,8 @@ watch(selectedDate, () => {
             </button>
             
             <div class="relative">
-              <button
-                @click="favoritesOpen = !favoritesOpen"
+              <button 
+                @click="toggleFavorites"
                 class="text-gray-400 hover:text-white transition-colors flex items-center space-x-2 text-sm font-medium"
               >
                 <span>Favorites</span>
@@ -175,6 +236,14 @@ watch(selectedDate, () => {
             >
               About
             </a>
+
+            <button 
+              v-if="isAuthenticated" 
+              @click="logout" 
+              class="text-gray-400 hover:text-white transition-colors text-sm font-medium"
+            >
+              Disconnect
+            </button>
           </div>
 
           <button
@@ -258,13 +327,17 @@ watch(selectedDate, () => {
       <aside class="w-96 flex-shrink-0 bg-gray-950 border-r border-gray-800 overflow-y-auto mt-10">
         <div class="p-6 space-y-6">
           <div>
-            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">
-              Location Search
-            </h2>
-            <SearchBar @location-selected="target = $event" />
-            <p class="text-xs text-gray-600 mt-2">
-              Search for any city, region, or coordinates worldwide
-            </p>
+            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">Location Search</h2>
+            <SearchBar @location-selected="handleLocationSelected" />
+            <button
+              v-if="isAuthenticated && target"
+              @click="addFavorite(target)"
+              class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+            >
+              + Favorite
+            </button>
+
+            <p class="text-xs text-gray-600 mt-2">Search for any city, region, or coordinates worldwide</p>
           </div>
 
           <div>

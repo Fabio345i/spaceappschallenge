@@ -8,8 +8,8 @@
             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
           </svg>
         </div>
-        <h1>Connexion</h1>
-        <p class="subtitle">Accédez à votre espace</p>
+        <h1>Login</h1>
+        <p class="subtitle">Access your space</p>
       </div>
 
       <div class="card">
@@ -19,7 +19,7 @@
 
         <form @submit.prevent="handleLogin">
           <div class="form-group">
-            <label>Nom d'utilisateur</label>
+            <label>Username</label>
             <div class="input-wrapper">
               <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -28,14 +28,14 @@
               <input
                 v-model="formData.username"
                 type="text"
-                placeholder="username"
+                placeholder="Username"
                 required
               />
             </div>
           </div>
 
           <div class="form-group">
-            <label>Mot de passe</label>
+            <label>Password</label>
             <div class="input-wrapper">
               <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
@@ -65,7 +65,7 @@
           </div>
 
           <button type="submit" class="submit-btn" :disabled="loading">
-            {{ loading ? 'Chargement...' : 'Se connecter' }}
+            {{ loading ? 'Loading...' : 'Login' }}
             <svg v-if="!loading" class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="5" y1="12" x2="19" y2="12"></line>
               <polyline points="12 5 19 12 12 19"></polyline>
@@ -74,8 +74,7 @@
         </form>
 
         <div class="footer">
-          <button class="link-btn">Mot de passe oublié ?</button>
-          <button class="link-btn" @click="$router.push('/register')">Créer un compte</button>
+          <button class="link-btn" @click="$router.push('/register')">Register here</button>
         </div>
       </div>
     </div>
@@ -114,15 +113,14 @@ export default {
         const data = await response.json()
 
         if (response.ok) {
-          this.message = { type: 'success', text: 'Connexion réussie' }
+          this.message = { type: 'success', text: 'Login success' }
           localStorage.setItem('token', data.access_token)
-          // Redirection ou action après login
-          this.$router.push('/dashboard')
+          this.$router.push('/')
         } else {
-          this.message = { type: 'error', text: data.detail || 'Identifiants invalides' }
+          this.message = { type: 'error', text: data.detail || 'Invalid credentials' }
         }
       } catch (error) {
-        this.message = { type: 'error', text: 'Erreur de connexion au serveur' }
+        this.message = { type: 'error', text: 'Server error' }
       } finally {
         this.loading = false
       }

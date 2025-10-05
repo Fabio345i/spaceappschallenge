@@ -41,12 +41,13 @@ def disasters_headlines(
 
     for ev in events:
         title = ev.get("title") or "Event"
+        import re
+        title = re.sub(r'\s+\d{6,}', '', title)
+        
         cat = (ev.get("categories") or [{}])[0].get("title", "Event")
-
         geom = next((g for g in ev.get("geometry", []) if g.get("date", "").startswith(date)), None)
         if not geom:
             continue
-
         place = place_str(geom) or "location unavailable"
         headlines.append(f"{cat} — '{title}' — {place} — {date} (UTC)")
 

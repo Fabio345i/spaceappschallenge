@@ -1,27 +1,38 @@
 <template>
-  <div class="register-view">
-    <div class="register-container">
-      <div class="header">
-        <div class="icon-wrapper">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-            <circle cx="8.5" cy="7" r="4"></circle>
-            <line x1="20" y1="8" x2="20" y2="14"></line>
-            <line x1="23" y1="11" x2="17" y2="11"></line>
+  <transition name="fade">
+    <div v-if="visible" class="popover-overlay" @click.self="close">
+      <div class="popover-container" @click.stop>
+        <!-- Close button -->
+        <button @click="close" class="close-btn">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
-        </div>
-        <h1>Register</h1>
-        <p class="subtitle">Join the team now!</p>
-      </div>
+        </button>
 
-      <div class="card">
+        <!-- Header -->
+        <div class="header">
+          <div class="icon-wrapper">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="8.5" cy="7" r="4"></circle>
+              <line x1="20" y1="8" x2="20" y2="14"></line>
+              <line x1="23" y1="11" x2="17" y2="11"></line>
+            </svg>
+          </div>
+          <h1>Register</h1>
+          <p class="subtitle">Earth Observation System - WeatherMellon</p>
+        </div>
+
+        <!-- Message -->
         <div v-if="message.text" :class="['message', message.type]">
           {{ message.text }}
         </div>
 
+        <!-- Form -->
         <form @submit.prevent="handleRegister">
           <div class="form-group">
-            <label>Username</label>
+            <label>USERNAME</label>
             <div class="input-wrapper">
               <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -30,14 +41,14 @@
               <input
                 v-model="formData.username"
                 type="text"
-                placeholder="Username"
+                placeholder="Enter username"
                 required
               />
             </div>
           </div>
 
           <div class="form-group">
-            <label>Email</label>
+            <label>EMAIL</label>
             <div class="input-wrapper">
               <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
@@ -46,26 +57,26 @@
               <input
                 v-model="formData.email"
                 type="email"
-                placeholder="Email"
+                placeholder="Enter email"
                 required
               />
             </div>
           </div>
 
           <div class="form-group">
-            <label>Password</label>
+            <label>PASSWORD</label>
             <div class="input-wrapper">
               <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
               </svg>
-                <input
+              <input
                 v-model="formData.password"
-                :maxlength="72"
                 :type="showPassword ? 'text' : 'password'"
                 placeholder="••••••••"
+                maxlength="72"
                 required
-                />
+              />
               <button 
                 type="button" 
                 @click="showPassword = !showPassword"
@@ -92,18 +103,28 @@
           </button>
         </form>
 
+        <!-- Footer -->
         <div class="footer">
-          <span class="footer-text">Already have an account ?</span>
-          <button class="link-btn" @click="$router.push('/login')">Login here</button>
+          <p class="footer-text">
+            Already have an account? 
+            <button @click="switchToLogin" class="link-btn">Login here</button>
+          </p>
         </div>
       </div>
     </div>
-  </div>
+  </transition>
 </template>
 
 <script>
 export default {
-  name: 'RegisterView',
+  name: 'RegisterPopover',
+  props: {
+    visible: {
+      type: Boolean,
+      default: false
+    }
+  },
+  emits: ['close', 'switch-to-login', 'register-success'],
   data() {
     return {
       showPassword: false,
@@ -120,6 +141,12 @@ export default {
     }
   },
   methods: {
+    close() {
+      this.$emit('close')
+    },
+    switchToLogin() {
+      this.$emit('switch-to-login')
+    },
     async handleRegister() {
       this.loading = true
       this.message = { type: '', text: '' }
@@ -127,41 +154,24 @@ export default {
       try {
         const response = await fetch('http://localhost:8000/auth/register', {
           method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(this.formData)
         })
 
         const data = await response.json()
 
         if (response.ok) {
-          this.message = { 
-            type: 'success', 
-            text: 'Registered successfully ! Redirecting...' 
-          }
-          
-          this.formData = {
-            username: '',
-            email: '',
-            password: ''
-          }
+          this.message = { type: 'success', text: 'Registered successfully! Switching to login...' }
+          this.formData = { username: '', email: '', password: '' }
           
           setTimeout(() => {
-            this.$router.push('login')
+            this.$emit('register-success')
           }, 2000)
         } else {
-          this.message = { 
-            type: 'error', 
-            text: data.detail || 'An error occurred' 
-          }
+          this.message = { type: 'error', text: data.detail || 'An error occurred' }
         }
       } catch (error) {
-        console.error('Register error:', error)
-        this.message = { 
-          type: 'error', 
-          text: 'Server error' 
-        }
+        this.message = { type: 'error', text: 'Server error' }
       } finally {
         this.loading = false
       }
@@ -171,64 +181,93 @@ export default {
 </script>
 
 <style scoped>
-.register-view {
-  min-height: 100vh;
-  background-color: #000;
+.popover-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
 }
 
-.register-container {
+.popover-container {
+  position: relative;
   width: 100%;
   max-width: 440px;
+  background: #030712;
+  border: 1px solid #1f2937;
+  border-radius: 16px;
+  padding: 40px 32px 32px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+.close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  color: #fff;
+  background: #1f2937;
 }
 
 .header {
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 32px;
 }
 
 .icon-wrapper {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 64px;
-  height: 64px;
-  background: #fff;
-  border-radius: 16px;
+  width: 56px;
+  height: 56px;
+  background: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 14px;
   margin-bottom: 16px;
 }
 
 .icon {
-  width: 32px;
-  height: 32px;
-  stroke: #000;
+  width: 28px;
+  height: 28px;
+  stroke: #f3f4f6;
 }
 
 h1 {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 700;
   color: #fff;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .subtitle {
-  color: #9ca3af;
-  font-size: 16px;
-}
-
-.card {
-  background: #18181b;
-  border: 1px solid #27272a;
-  border-radius: 16px;
-  padding: 32px;
+  color: #6b7280;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .message {
-  padding: 16px;
-  border-radius: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
   margin-bottom: 24px;
   border: 1px solid;
   font-size: 14px;
@@ -237,13 +276,13 @@ h1 {
 .message.success {
   background: #14532d;
   border-color: #166534;
-  color: #bbf7d0;
+  color: #86efac;
 }
 
 .message.error {
-  background: #450a0a;
+  background: #7f1d1d;
   border-color: #991b1b;
-  color: #fecaca;
+  color: #fca5a5;
 }
 
 .form-group {
@@ -252,10 +291,12 @@ h1 {
 
 label {
   display: block;
-  font-size: 14px;
-  font-weight: 500;
-  color: #d1d5db;
+  font-size: 12px;
+  font-weight: 600;
+  color: #9ca3af;
   margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .input-wrapper {
@@ -275,11 +316,11 @@ label {
 input {
   width: 100%;
   background: #000;
-  border: 1px solid #27272a;
-  border-radius: 12px;
+  border: 1px solid #1f2937;
+  border-radius: 8px;
   padding: 12px 16px 12px 48px;
   color: #fff;
-  font-size: 15px;
+  font-size: 14px;
   transition: border-color 0.2s;
 }
 
@@ -289,7 +330,7 @@ input::placeholder {
 
 input:focus {
   outline: none;
-  border-color: #fff;
+  border-color: #4b5563;
 }
 
 .toggle-password {
@@ -306,7 +347,7 @@ input:focus {
 }
 
 .toggle-password:hover {
-  color: #fff;
+  color: #9ca3af;
 }
 
 .eye-icon {
@@ -316,24 +357,24 @@ input:focus {
 
 .submit-btn {
   width: 100%;
-  background: #fff;
-  color: #000;
+  background: #1f2937;
+  color: #fff;
   font-weight: 600;
-  font-size: 15px;
-  padding: 14px;
-  border: none;
-  border-radius: 12px;
+  font-size: 14px;
+  padding: 12px;
+  border: 1px solid #374151;
+  border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   margin-top: 24px;
-  transition: background 0.2s;
+  transition: all 0.2s;
 }
 
 .submit-btn:hover:not(:disabled) {
-  background: #f3f4f6;
+  background: #374151;
 }
 
 .submit-btn:disabled {
@@ -347,30 +388,70 @@ input:focus {
 }
 
 .footer {
-  text-align: center;
   margin-top: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
+  padding-top: 24px;
+  border-top: 1px solid #1f2937;
+  text-align: center;
 }
 
 .footer-text {
-  color: #9ca3af;
   font-size: 14px;
+  color: #6b7280;
 }
 
 .link-btn {
   background: none;
   border: none;
-  color: #fff;
+  color: #9ca3af;
   font-size: 14px;
   cursor: pointer;
-  font-weight: 500;
   transition: color 0.2s;
+  font-weight: 500;
+  margin-left: 4px;
 }
 
 .link-btn:hover {
-  color: #d1d5db;
+  color: #fff;
+}
+
+/* Transitions */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.fade-enter-active .popover-container {
+  animation: slideUp 0.3s ease;
+}
+
+.fade-leave-active .popover-container {
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(20px);
+    opacity: 0;
+  }
 }
 </style>

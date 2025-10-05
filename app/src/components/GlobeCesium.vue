@@ -7,9 +7,12 @@ import {
   GeoJsonDataSource,
   Color,
   Cartesian3,
-  HeadingPitchRange
+  HeadingPitchRange,
+  ScreenSpaceEventType,
+  ScreenSpaceEventHandler
 } from 'cesium'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
+import Popup from './Popup.vue'
 
 const props = defineProps({
   target: {
@@ -23,9 +26,14 @@ const props = defineProps({
 })
 
 const cesiumContainer = ref(null)
-let viewer
+let viewer = null
 let cityDataSource = null
 let markerEntity = null
+const showPopup = ref(false);
+const popupTitle = ref('');
+const climatData = ref(null);
+const recommandation = ref('')
+
 
 async function fetchOsmBoundary(osmId) {
   try {
@@ -49,7 +57,7 @@ function resetCameraView() {
 }
 
 onMounted(() => {
-  viewer = new Viewer(cesiumContainer.value, {
+   viewer = new Viewer(cesiumContainer.value, {
     baseLayerPicker: false,
     geocoder: false,
     timeline: false,

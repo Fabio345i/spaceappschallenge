@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from api.routes.auth.login import router as login_router
-from api.routes.auth.register import router as register_router
-from api.routes.merra2 import router as merra2_router
-from api.routes.algo import router as algo_router
-from api.db.session import connect_db, disconnect_db
+from routes.auth.login import router as login_router
+from routes.auth.register import router as register_router
+from routes.merra2 import router as merra2_router
+from routes.algo import router as algo_router
+from db.session import connect_db, disconnect_db
 
 
 client = None

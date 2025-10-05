@@ -2,7 +2,7 @@
   <transition name="fade-slide">
     <div
       v-if="visible"
-      class="fixed top-6 right-6 z-50 w-96 rounded-2xl shadow-2xl border backdrop-blur-xl overflow-hidden"
+      class="absolute top-4 right-4 z-50 w-80 rounded-2xl shadow-2xl border backdrop-blur-xl overflow-hidden max-h-[calc(100%-2rem)] overflow-y-auto"
       :style="{
         background: 'linear-gradient(135deg, rgba(17, 24, 39, 0.95) 0%, rgba(31, 41, 55, 0.95) 100%)',
         borderColor: 'rgba(99, 102, 241, 0.3)',
@@ -13,10 +13,10 @@
       <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-purple-500/10 pointer-events-none"></div>
       <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-400/50 to-transparent"></div>
       
-      <div class="relative flex justify-between items-start p-5 border-b border-gray-700/50">
-        <div class="flex items-center gap-3">
+      <div class="relative flex justify-between items-start p-4 border-b border-gray-700/50">
+        <div class="flex items-center gap-2">
           <div class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
-          <h3 class="font-bold text-lg bg-gradient-to-r from-white to-indigo-200 bg-clip-text text-transparent">
+          <h3 class="font-bold text-base bg-gradient-to-r from-white to-indigo-200 bg-clip-text text-transparent">
             {{ title }}
           </h3>
         </div>
@@ -29,54 +29,67 @@
         </button>
       </div>
 
-      <div class="relative p-5 border-b border-gray-700/50">
-        <div class="flex items-center gap-2 mb-3">
-          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-xs">⛰️</div>
+      <div class="relative p-4 border-b border-gray-700/50">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-xs">⛰️</div>
           <div>
-            <h4 class="font-semibold text-white">Climat au Sommet</h4>
+            <h4 class="font-semibold text-sm text-white">Climat au Sommet</h4>
             <p class="text-xs text-gray-400">{{ displayData.altitude_sommet }}m d'altitude</p>
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div class="bg-gray-800/50 rounded-lg p-3">
+        <div class="grid grid-cols-2 gap-2">
+          <div class="bg-gray-800/50 rounded-lg p-2">
             <p class="text-xs text-gray-400 mb-1">Température</p>
-            <p class="text-lg font-bold text-blue-400">{{ displayData.temperature_sommet }}°C</p>
+            <p class="text-base font-bold text-blue-400">{{ displayData.temperature_sommet }}°C</p>
           </div>
-          <div class="bg-gray-800/50 rounded-lg p-3">
+          <div class="bg-gray-800/50 rounded-lg p-2">
             <p class="text-xs text-gray-400 mb-1">Vent</p>
-            <p class="text-lg font-bold text-cyan-400">{{ displayData.vent_sommet }} km/h</p>
+            <p class="text-base font-bold text-cyan-400">{{ displayData.vent_sommet }} km/h</p>
           </div>
-          <div class="bg-gray-800/50 rounded-lg p-3 col-span-2">
+          <div class="bg-gray-800/50 rounded-lg p-2 col-span-2">
             <p class="text-xs text-gray-400 mb-1">Précipitations</p>
-            <p class="text-lg font-bold text-indigo-400">{{ displayData.precipitation_sommet }} mm</p>
+            <p class="text-base font-bold text-indigo-400">{{ displayData.precipitation_sommet }} mm</p>
           </div>
         </div>
       </div>
 
-      <div class="relative p-5">
-        <div class="flex items-center gap-2 mb-3">
-          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-xs">🏔️</div>
+      <div class="relative p-4">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-xs">🏔️</div>
           <div>
-            <h4 class="font-semibold text-white">Climat à la Base</h4>
+            <h4 class="font-semibold text-sm text-white">Climat à la Base</h4>
             <p class="text-xs text-gray-400">{{ displayData.altitude_base }}m d'altitude</p>
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div class="bg-gray-800/50 rounded-lg p-3">
+        <div class="grid grid-cols-2 gap-2">
+          <div class="bg-gray-800/50 rounded-lg p-2">
             <p class="text-xs text-gray-400 mb-1">Température</p>
-            <p class="text-lg font-bold text-orange-400">{{ displayData.temperature_base }}°C</p>
+            <p class="text-base font-bold text-orange-400">{{ displayData.temperature_base }}°C</p>
           </div>
-          <div class="bg-gray-800/50 rounded-lg p-3">
+          <div class="bg-gray-800/50 rounded-lg p-2">
             <p class="text-xs text-gray-400 mb-1">Humidité</p>
-            <p class="text-lg font-bold text-teal-400">{{ displayData.humiditer_base }}%</p>
+            <p class="text-base font-bold text-teal-400">{{ displayData.humiditer_base }}%</p>
           </div>
-          <div class="bg-gray-800/50 rounded-lg p-3">
+          <div class="bg-gray-800/50 rounded-lg p-2">
             <p class="text-xs text-gray-400 mb-1">Vent</p>
-            <p class="text-lg font-bold text-cyan-400">{{ displayData.vent_base }} km/h</p>
+            <p class="text-base font-bold text-cyan-400">{{ displayData.vent_base }} km/h</p>
           </div>
-          <div class="bg-gray-800/50 rounded-lg p-3">
+          <div class="bg-gray-800/50 rounded-lg p-2">
             <p class="text-xs text-gray-400 mb-1">Précipitations</p>
-            <p class="text-lg font-bold text-indigo-400">{{ displayData.precipitation_base }} mm</p>
+            <p class="text-base font-bold text-indigo-400">{{ displayData.precipitation_base }} mm</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recommandation / Commentaire -->
+      <div class="relative p-4 border-t border-gray-700/50 bg-gradient-to-br from-gray-800/30 to-gray-900/30">
+        <div class="flex items-start gap-2">
+          <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-xs flex-shrink-0">💡</div>
+          <div>
+            <h4 class="font-semibold text-sm text-white mb-1">Recommandation</h4>
+            <p class="text-xs text-gray-300 leading-relaxed">
+              {{ displayRecommandation }}
+            </p>
           </div>
         </div>
       </div>
@@ -96,6 +109,10 @@ const props = defineProps({
   climatData: {
     type: Object,
     default: null
+  },
+  recommandation: {
+    type: String,
+    default: null
   }
 });
 
@@ -114,8 +131,12 @@ const fakeClimatData = {
   precipitation_sommet: 2
 };
 
+// Recommandation de test (en attendant le backend)
+const fakeRecommandation = "✅ Conditions favorables pour l'ascension. Les températures sont douces et le vent modéré. Attention aux précipitations légères au sommet. Équipement recommandé : veste imperméable et bonnet.";
+
 // Utiliser les données de test si aucune donnée réelle n'est fournie
 const displayData = computed(() => props.climatData || fakeClimatData);
+const displayRecommandation = computed(() => props.recommandation || fakeRecommandation);
 </script>
 
 <style scoped>

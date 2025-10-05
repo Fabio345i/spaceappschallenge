@@ -13,6 +13,30 @@
           {{ props.location?.lat.toFixed(2) }}° / {{ props.location?.lon.toFixed(2) }}°
         </p>
       </div>
+   
+      <!-- Bloc confiance -->
+      <div 
+        v-if="dataLoaded" 
+        class="mb-4 p-3 bg-gray-800/40 border border-gray-700 rounded-lg text-center"
+      >
+        <p class="text-xs text-gray-400 mb-1">
+          {{ isFuturePrediction ? 'Confiance de la prédiction' : 'La donnée est confirmée à' }}
+        </p>
+
+        <div class="text-sm font-semibold text-white mb-2">
+          {{ isFuturePrediction ? confiance + '%' : '100%' }}
+        </div>
+
+        <!-- Barre seulement pour les prédictions -->
+        <div v-if="isFuturePrediction" class="w-full bg-gray-700 rounded-full h-4">
+          <div
+            :style="{ width: confiance + '%', backgroundColor: couleurConfiance }"
+            class="h-4 rounded-full transition-all duration-500"
+          ></div>
+        </div>
+      </div>
+
+
 
 <!-- Résumé météo -->
 <div class="mt-6 bg-gray-800/40 border border-gray-700 rounded-lg p-5 m-2 text-center">
@@ -88,6 +112,31 @@ const props = defineProps({
   location: { type: Object, default: null },
   selectedDate: { type: Date, default: () => new Date() },
 })
+
+const isFuturePrediction = computed(() => {
+  const today = new Date()
+  const selected = new Date(props.selectedDate)
+  return selected > today
+})
+
+const k = 0.001
+
+const confiance = computed(() => {
+  if (!isFuturePrediction.value) return 100
+
+  const today = new Date()
+  const selected = new Date(props.selectedDate)
+  const joursFuturs = Math.max(0, Math.ceil((selected - today) / (1000 * 60 * 60 * 24)))
+
+  return Math.round(80 * Math.exp(-k * (joursFuturs - 1)))
+})
+
+const couleurConfiance = computed(() => {
+  if (confiance.value > 75) return '#22c55e'
+  if (confiance.value > 50) return '#facc15'
+  return '#ef4444'
+})
+
 const emit = defineEmits(['reset-view'])
 
 const temperature = ref('--')

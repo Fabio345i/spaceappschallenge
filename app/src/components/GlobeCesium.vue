@@ -18,6 +18,10 @@ const props = defineProps({
   target: {
     type: Object,
     default: null
+  },
+  resetTrigger: {
+    type: Number,
+    default: 0
   }
 })
 
@@ -44,8 +48,17 @@ async function fetchOsmBoundary(osmId) {
     if (!res.ok) throw new Error('OSM Boundaries error')
     return await res.json()
   } catch (e) {
-    console.warn('Impossible de charger les limites OSM Boundaries', e)
+    console.warn('Failed to load OSM boundaries', e)
     return null
+  }
+}
+
+function resetCameraView() {
+  if (viewer) {
+    viewer.camera.flyTo({
+      destination: Cartesian3.fromDegrees(-95, 50, 9000000),
+      duration: 1.5
+    })
   }
 }
 
@@ -57,7 +70,7 @@ onMounted(() => {
     animation: false,
     terrainProvider: new EllipsoidTerrainProvider()
   })
-  
+
   viewer.imageryLayers.removeAll()
   viewer.imageryLayers.addImageryProvider(
     new UrlTemplateImageryProvider({
@@ -115,6 +128,13 @@ handler.setInputAction((movement) => {
 })
 
 watch(
+  () => props.resetTrigger,
+  () => {
+    resetCameraView()
+  }
+)
+
+watch(
   () => props.target,
   async (val) => {
     if (!val || !viewer) return
@@ -133,8 +153,7 @@ watch(
 
     if (val.geojson) {
       geojsonToLoad = val.geojson
-    }
-    else if (val.osm_id) {
+    } else if (val.osm_id) {
       geojsonToLoad = await fetchOsmBoundary(val.osm_id)
     }
 

@@ -21,7 +21,7 @@ const props = defineProps({
 })
 
 const cesiumContainer = ref(null)
-let viewer
+let viewer = null
 let cityDataSource = null
 let markerEntity = null
 const showPopup = ref(false);
@@ -42,7 +42,7 @@ async function fetchOsmBoundary(osmId) {
 }
 
 onMounted(() => {
-  const viewer = new Viewer(cesiumContainer.value, {
+   viewer = new Viewer(cesiumContainer.value, {
     baseLayerPicker: false,
     geocoder: false,
     timeline: false,
@@ -65,7 +65,7 @@ onMounted(() => {
   const handler = new ScreenSpaceEventHandler(viewer.scene.canvas)
   handler.setInputAction((mouvement) => {
     // Attribuer les données
-      popupTitle.value = target.city;
+      popupTitle.value = "Nom de la montagne";
       
       climatData.value = {
         altitude_base: 265,

@@ -120,10 +120,6 @@ async def analyse_day(
         "note": "Algorithme simplifié POWER (sans nuages/omega/T850/skin temp). ΔP basé sur jour-1 POWER."
     }
 
-
-
-
-
 @router.get("/daily/predict")
 def predict_weather(
     lat: float = Query(..., description="Latitude"),

@@ -19,6 +19,5 @@ resp = requests.get(url, timeout=30)
 resp.raise_for_status()
 data = resp.json()
 
-# Les valeurs sont dans data["properties"]["parameter"]
 params = data["properties"]["parameter"]
 print(params)

@@ -7,7 +7,6 @@ import requests
 import statistics
 
 router = APIRouter()
-router = APIRouter()
 
 NASA_POWER_URL = "https://power.larc.nasa.gov/api/temporal/daily/point"
 PARAMS = "T2M,T2M_MIN,T2M_MAX,RH2M,U2M,V2M,PS,PRECTOTCORR"
@@ -121,10 +120,6 @@ async def analyse_day(
         "note": "Algorithme simplifié POWER (sans nuages/omega/T850/skin temp). ΔP basé sur jour-1 POWER."
     }
 
-
-
-
-
 @router.get("/daily/predict")
 def predict_weather(
     lat: float = Query(..., description="Latitude"),
@@ -226,4 +221,159 @@ def predict_weather(
         "humidite_moyenne": RH,
         "vent_moyen_m_s": vent,
         "pression_moy_kPa": P,
+    }
+
+
+@router.get("/daily/predict_rain")
+def predict_rain(
+    lat: float = Query(..., description="Latitude"),
+    lon: float = Query(..., description="Longitude"),
+    day: int = Query(..., ge=1, le=31),
+    month: int = Query(..., ge=1, le=12),
+    base_years: int = Query(20, description="Nombre d'années historiques à utiliser"),
+    future_year: int = Query(..., description="Année future pour la prédiction"),
+    window_days: int = Query(3, description="Taille de la fenêtre autour du jour cible")
+):
+    """
+    Prédiction simplifiée des précipitations pour une date future basée sur les N dernières années NASA POWER.
+    """
+    from datetime import datetime, timedelta
+    import requests, statistics
+
+    current_year = datetime.utcnow().year
+    start_year = current_year - base_years
+
+    # --- Construit toutes les dates de référence autour du jour cible pour les années passées ---
+    ref_dates = []
+    for y in range(start_year, current_year):
+        center = datetime(y, month, day)
+        for d in range(-window_days, window_days + 1):
+            ref_dates.append(center + timedelta(days=d))
+
+    # --- Formatage des bornes pour appel NASA POWER ---
+    start = min(ref_dates).strftime("%Y%m%d")
+    end = max(ref_dates).strftime("%Y%m%d")
+
+    url = (
+        "https://power.larc.nasa.gov/api/temporal/daily/point"
+        f"?parameters=PRECTOTCORR&start={start}&end={end}"
+        f"&latitude={lat}&longitude={lon}&community=RE&format=JSON"
+    )
+
+    try:
+        resp = requests.get(url, timeout=40)
+        resp.raise_for_status()
+        data = resp.json()
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(status_code=502, detail=f"Erreur NASA POWER : {e}")
+
+    if "properties" not in data or "parameter" not in data["properties"]:
+        raise HTTPException(500, "Réponse NASA POWER inattendue")
+
+    p = data["properties"]["parameter"]
+    precip = {datetime.strptime(k, "%Y%m%d"): v for k, v in p.get("PRECTOTCORR", {}).items()}
+
+    # --- Collecte des valeurs de précipitations sur toutes les dates de référence ---
+    values = [precip[d] for d in ref_dates if d in precip]
+
+    if not values:
+        raise HTTPException(404, "Pas de données de précipitation disponibles pour ce point/date")
+
+    rain_mean = sum(values) / len(values)
+    rain_std = statistics.pstdev(values) if len(values) > 1 else None
+
+    return {
+        "future_year": future_year,
+        "date_predite": f"{future_year:04d}-{month:02d}-{day:02d}",
+        "periode_utilisee": {
+            "start": min(ref_dates).strftime("%Y-%m-%d"),
+            "end": max(ref_dates).strftime("%Y-%m-%d"),
+            "nb_jours": len(ref_dates)
+        },
+        "precip_moyenne": rain_mean,
+        "precip_std": rain_std,
+        "note": "Prédiction basée sur la moyenne historique NASA POWER (PRECTOTCORR) sur une fenêtre ±window_days"
+    }
+
+
+@router.get("/daily/predict_rain_hourly")
+def predict_rain_hourly(
+    lat: float = Query(..., description="Latitude"),
+    lon: float = Query(..., description="Longitude"),
+    day: int = Query(..., ge=1, le=31),
+    month: int = Query(..., ge=1, le=12),
+    base_years: int = Query(20),
+    future_year: int = Query(...),
+    window_days: int = Query(3)
+):
+    """
+    Prédiction simplifiée des précipitations avec répartition sur 4 plages horaires
+    (night/morning/afternoon/evening).
+    """
+    from datetime import datetime, timedelta
+    import requests, random, statistics
+
+    current_year = datetime.utcnow().year
+    start_year = current_year - base_years
+
+    # Générer les dates historiques autour du jour/mois
+    ref_dates = []
+    for y in range(start_year, current_year):
+        center = datetime(y, month, day)
+        for d in range(-window_days, window_days + 1):
+            ref_dates.append(center + timedelta(days=d))
+
+    start = min(ref_dates).strftime("%Y%m%d")
+    end = max(ref_dates).strftime("%Y%m%d")
+
+    url = (
+        "https://power.larc.nasa.gov/api/temporal/daily/point"
+        f"?parameters=PRECTOTCORR&start={start}&end={end}"
+        f"&latitude={lat}&longitude={lon}&community=RE&format=JSON"
+    )
+
+    try:
+        resp = requests.get(url, timeout=40)
+        resp.raise_for_status()
+        data = resp.json()
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(status_code=502, detail=f"Erreur NASA POWER : {e}")
+
+    if "properties" not in data or "parameter" not in data["properties"]:
+        raise HTTPException(500, "Réponse NASA POWER inattendue")
+
+    precip = {
+        datetime.strptime(k, "%Y%m%d"): v
+        for k, v in data["properties"]["parameter"].get("PRECTOTCORR", {}).items()
+    }
+
+    values = [precip[d] for d in ref_dates if d in precip]
+    if not values:
+        raise HTTPException(404, "Pas de données de précipitation disponibles pour ce point/date")
+
+    # Pluie journalière moyenne
+    rain_mean = sum(values) / len(values)
+    rain_std = statistics.pstdev(values) if len(values) > 1 else None
+
+    # Répartition simple : 25% chacune + bruit aléatoire léger
+    base_split = [0.25, 0.25, 0.25, 0.25]
+    # On ajoute un petit bruit aléatoire qui se recentre à 1
+    random_factors = [1 + (random.uniform(-0.15, 0.15)) for _ in base_split]
+    norm = sum(random_factors)
+    split = [f / norm for f in random_factors]
+
+    periods = [
+        {"label": "Night", "rain": rain_mean * split[0]},
+        {"label": "Morning", "rain": rain_mean * split[1]},
+        {"label": "Afternoon", "rain": rain_mean * split[2]},
+        {"label": "Evening", "rain": rain_mean * split[3]},
+    ]
+
+    return {
+        "future_year": future_year,
+        "date_predite": f"{future_year:04d}-{month:02d}-{day:02d}",
+        "precip_moyenne": rain_mean,
+        "precip_std": rain_std,
+        "periods": periods,
+        "note": "Répartition statistique simplifiée des précipitations journalières (NASA POWER PRECTOTCORR)."
     }

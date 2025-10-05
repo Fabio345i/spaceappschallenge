@@ -127,75 +127,86 @@ function isPastOrTodayUTC(d) {
 }
 
 async function fetchWeather(loc, date) {
+  const d = new Date(date)
+  const y = d.getUTCFullYear()
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0")
+  const day = String(d.getUTCDate()).padStart(2, "0")
+  const dateStr = `${y}${m}${day}`
+
+  dataLoaded.value = false
+
   try {
-    const d = new Date(date)
-    const y = d.getUTCFullYear()
-    const m = String(d.getUTCMonth() + 1).padStart(2, "0")
-    const day = String(d.getUTCDate()).padStart(2, "0")
-    const dateStr = `${y}${m}${day}`
-
-    dataLoaded.value = false
-
     if (isPastOrTodayUTC(d)) {
-      // ---- Données historiques ----
-      const analyseRes = await axios.get("http://127.0.0.1:8000/algo/daily/analyse", {
+      // ---- Historique ----
+      const { data: a } = await axios.get("http://127.0.0.1:8000/algo/daily/analyse", {
         params: { lat: loc.lat, lon: loc.lon, day, month: m, years: 20 }
       })
-      const a = analyseRes.data || {}
 
       temperature.value = a.T_moyenne != null ? a.T_moyenne.toFixed(1) : "--"
-      tMin.value       = a.Tmin_moyenne != null ? a.Tmin_moyenne.toFixed(1) : "--"
-      tMax.value       = a.Tmax_moyenne != null ? a.Tmax_moyenne.toFixed(1) : "--"
-      humidity.value   = a.humidite_moyenne != null ? a.humidite_moyenne.toFixed(0) : "--"
-      wind.value       = a.vent_moyen_m_s != null ? a.vent_moyen_m_s.toFixed(1) : "--"
-      pressure.value   = a.pression_moy_kPa != null ? a.pression_moy_kPa.toFixed(1) : "--"
+      tMin.value        = a.Tmin_moyenne != null ? a.Tmin_moyenne.toFixed(1) : "--"
+      tMax.value        = a.Tmax_moyenne != null ? a.Tmax_moyenne.toFixed(1) : "--"
+      humidity.value    = a.humidite_moyenne != null ? a.humidite_moyenne.toFixed(0) : "--"
+      wind.value        = a.vent_moyen_m_s != null ? a.vent_moyen_m_s.toFixed(1) : "--"
+      pressure.value    = a.pression_moy_kPa != null ? a.pression_moy_kPa.toFixed(1) : "--"
 
-      // ---- Pluie réelle ----
-      const rainRes = await axios.get("http://127.0.0.1:8000/weather/rainfall", {
-        params: { lat: loc.lat, lon: loc.lon, start: dateStr.replace("/-/g",""), end: dateStr.replace("/-/g","") }
-      })
-      const rainData = rainRes.data?.data
-      rain.value = rainData?.[dateStr] != null ? Number(rainData[dateStr]).toFixed(1) : "--"
+      // ✅ Affiche le panneau même si la pluie échoue
+      dataLoaded.value = true
+
+      // Pluie historique (peut échouer sans casser l’UI)
+      try {
+        const { data: r } = await axios.get("http://127.0.0.1:8000/weather/rainfall", {
+          params: { lat: loc.lat, lon: loc.lon, start: dateStr, end: dateStr }
+        })
+        const obj = r?.data || {}
+        rain.value = obj[dateStr] != null ? Number(obj[dateStr]).toFixed(1) : "--"
+      } catch (e) {
+        console.warn("Rainfall (historique) KO:", e)
+        rain.value = "--"
+      }
 
     } else {
-      // ---- Données prévisionnelles ----
-      const predictRes = await axios.get("http://127.0.0.1:8000/algo/daily/predict", {
+      // ---- Futur (prédiction) ----
+      const { data: p } = await axios.get("http://127.0.0.1:8000/algo/daily/predict", {
         params: {
           lat: loc.lat,
           lon: loc.lon,
           day,
           month: m,
           base_years: 20,
-          future_year: y,
+          future_year: y,       // ok si ton backend accepte l'année absolue (tu as un 200)
           window_days: 3
         }
       })
-      const p = predictRes.data || {}
-      const safe = v => (v != null && !Number.isNaN(Number(v))) ? Number(v) : null
 
+      const safe = v => (v != null && !Number.isNaN(Number(v))) ? Number(v) : null
       temperature.value = safe(p.T_moyenne)?.toFixed(1) ?? "--"
-      tMin.value        = safe(p.Tmin_moyenne)?.toFixed(1) ?? "--"
-      tMax.value        = safe(p.Tmax_moyenne)?.toFixed(1) ?? "--"
+      tMin.value        = safe(p.Tmin_ajustee ?? p.Tmin_base)?.toFixed(1) ?? "--"
+      tMax.value        = safe(p.Tmax_ajustee ?? p.Tmax_base)?.toFixed(1) ?? "--"
       humidity.value    = safe(p.humidite_moyenne)?.toFixed(0) ?? "--"
       wind.value        = safe(p.vent_moyen_m_s)?.toFixed(1) ?? "--"
       pressure.value    = safe(p.pression_moy_kPa)?.toFixed(1) ?? "--"
 
-      // ---- Pluie prévue ----
-      const rainRes = await axios.get("http://127.0.0.1:8000/weather/rainfall", {
-        params: { lat: loc.lat, lon: loc.lon, start: dateStr, end: dateStr }
-      })
-      const rainData = rainRes.data?.data
-      rain.value = rainData?.[dateStr] != null ? Number(rainData[dateStr]).toFixed(1) : "--"
-    }
+      // ✅ Affiche le panneau même si la pluie future n’existe pas
+      dataLoaded.value = true
 
-    dataLoaded.value = true
+      // Pluie future: NASA POWER n’en fournit pas → on tente, mais on n’échoue pas l’UI
+      try {
+        const { data: r } = await axios.get("http://127.0.0.1:8000/weather/rainfall", {
+          params: { lat: loc.lat, lon: loc.lon, start: dateStr, end: dateStr }
+        })
+        const obj = r?.data || {}
+        rain.value = obj[dateStr] != null ? Number(obj[dateStr]).toFixed(1) : "--"
+      } catch (e) {
+        console.warn("Rainfall (futur) indisponible:", e)
+        rain.value = "--"
+      }
+    }
   } catch (e) {
-    console.error("Erreur API :", e)
+    console.error("Erreur API principale :", e)
     temperature.value = tMin.value = tMax.value = humidity.value = wind.value = pressure.value = rain.value = "--"
     dataLoaded.value = false
   }
 }
-
 
 function generatePDF() {
   const doc = new jsPDF()

@@ -130,7 +130,7 @@ const fetchRainData = async () => {
 
     weatherData.value = res.data.data
 
-    // 🔮 Si la date de fin est dans le futur, on ajoute une estimation
+
     if (end >= today) {
       const forecast = generateForecast(startDate.value, endDate.value, weatherData.value)
       weatherData.value = [...weatherData.value, ...forecast]

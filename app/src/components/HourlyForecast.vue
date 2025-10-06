@@ -85,7 +85,7 @@ async function fetchPrecipitation() {
     const dateStr = d.toISOString().split("T")[0].replace(/-/g, "")
 
     if (isFuture(d)) {
-      const { data } = await axios.get("http://127.0.0.1:8000/algo/daily/predict_rain_hourly", {
+      const { data } = await axios.get("https://spaceappschallenge-r59t.onrender.com/algo/daily/predict_rain_hourly", {
         params: {
           lat: props.latitude,
           lon: props.longitude,
@@ -99,7 +99,7 @@ async function fetchPrecipitation() {
       totalRain.value = data.precip_moyenne ?? 0
       customPeriods.value = data.periods || []
     } else {
-      const { data } = await axios.get("http://127.0.0.1:8000/weather/rainfall", {
+      const { data } = await axios.get("https://spaceappschallenge-r59t.onrender.com/weather/rainfall", {
         params: { lat: props.latitude, lon: props.longitude, start: dateStr, end: dateStr }
       })
       totalRain.value = data?.data?.[dateStr] ?? 0

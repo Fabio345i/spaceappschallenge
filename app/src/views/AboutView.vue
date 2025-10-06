@@ -3,7 +3,7 @@
 
     <section class="relative py-20 border-b border-gray-800 text-center">
       <h1 class="text-4xl md:text-5xl font-extrabold mb-4 text-white tracking-tight">
-        WeatherMelon NASA Weather Intelligence
+        WeatherMellon NASA Weather Intelligence
       </h1>
       <p class="max-w-3xl mx-auto text-gray-400 text-lg leading-relaxed">
         Built for explorers, scientists, and the simply curious this project transforms satellite data
@@ -101,7 +101,7 @@
 
     <footer class="py-6 border-t border-gray-800 text-center text-gray-500 text-sm">
       <p>
-        © 2025 WeatherMelon
+        © 2025 WeatherMellon
       </p>
       <p class="text-gray-600 mt-1">Space Apps Challenge |
 

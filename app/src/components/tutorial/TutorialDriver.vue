@@ -131,12 +131,41 @@ function startTutorial() {
   document.addEventListener('keypress', globalBlocker, true)
 
   driverObj.value = driver({
-    showProgress: true,
-    steps: tutorialSteps,
-    nextBtnText: 'Next',
-    prevBtnText: 'Back',
-    doneBtnText: 'Done',
-    allowClose: false,
+  showProgress: true,
+  steps: tutorialSteps,
+  nextBtnText: 'Next',
+  prevBtnText: 'Back',
+  doneBtnText: 'Done',
+  allowClose: true,
+  onDestroyStarted: () => {
+    runPrediction()
+    setPhase('done')
+    localStorage.setItem('nasa-weather-tutorial-seen', 'true')
+  },
+
+
+  onPopoverRendered: (popover) => {
+    const footer = popover.querySelector('.driver-popover-footer')
+   if (footer && !footer.querySelector('.driver-close-custom')) {
+  const closeBtn = document.createElement('button')
+  closeBtn.textContent = '✕ Close'
+  closeBtn.className =
+    'driver-close-custom bg-gray-900 border border-gray-700 text-gray-300 ' +
+    'rounded-md px-3 py-1 text-sm font-medium transition-all duration-200 ' +
+    'hover:bg-gradient-to-r hover:from-gray-800 hover:to-gray-700 ' +
+    'hover:border-gray-500 hover:text-blue-400 hover:shadow-[0_0_10px_rgba(96,165,250,0.4)] ' +
+    'active:scale-95'
+  
+  closeBtn.onclick = () => {
+    localStorage.setItem('nasa-weather-tutorial-seen', 'true')
+    driverObj.value?.destroy()
+  }
+
+  footer.appendChild(closeBtn)
+}
+
+  },
+
 
     onDestroyStarted: () => {
       runPrediction()
@@ -281,10 +310,20 @@ defineExpose({ startTutorial })
 
 
 <template>
-  <div></div>
+  <div> 
+    
+  </div>
 </template>
 
 <style>
+.driver-close-custom {
+  margin-left: auto !important;
+}
+.driver-close-custom:hover {
+  background-color: #374151 !important;
+  border-color: #4b5563 !important;
+}
+
 .driver-popover {
   background: #1f2937 !important;
   color: #f3f4f6 !important;
@@ -341,7 +380,7 @@ defineExpose({ startTutorial })
 }
 .driver-popover-next-btn:hover,
 .driver-popover-prev-btn:hover { background: #374151 !important; border-color: #4b5563 !important; }
-.driver-popover-close-btn { display: none !important; }
+/* .driver-popover-close-btn { display: none !important; } */
 .driver-active-element {
   border-radius: 8px !important;
   box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.8), 0 0 20px rgba(59, 130, 246, 0.4) !important;

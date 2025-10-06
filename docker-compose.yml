@@ -4,6 +4,16 @@ services:
   app:
     image: fabio345i/frontend:latest
     container_name: frontend
+    exposes:
+      - "80:80"
+  nginx:
+    image: nginx:latest
+    container_name: nginx-proxy
     ports:
       - "80:80"
-    restart: always
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/ssl/cloudflare:ro
+    depends_on:
+      - app

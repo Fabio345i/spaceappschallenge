@@ -104,10 +104,6 @@ Generate comprehensive PDF reports including:
 3. **Future Adjustment**: Apply trend to predict future temperatures
 4. **Confidence Scoring**: Calculate reliability using exponential decay formula
 
-```
-confidence = 80 × exp(-0.001 × days_into_future)
-```
-
 ### Precipitation Distribution
 
 Hourly rainfall predictions use historical time-of-day patterns:

@@ -9,6 +9,12 @@ import TutorialDriver from '@/components/tutorial/TutorialDriver.vue'
 import LoginPopover from '@/components/LoginPopover.vue'
 import RegisterPopover from '@/components/RegisterPopover.vue'
 import Confidence from '@/components/Confidence.vue'
+import AboutPopover from '@/components/AboutPopover.vue'
+
+const showAboutPopover = ref(false)
+function openAbout() {
+  showAboutPopover.value = true
+}
 
 const isFuturePrediction = computed(() => {
   if (!selectedDate.value) return null
@@ -247,6 +253,13 @@ function handleLocationSelected(location) {
     @register-success="openLogin"
   />
 
+  <AboutPopover :visible="showAboutPopover" @close="showAboutPopover = false">
+    <h2 class="text-xl font-semibold mb-4">À propos</h2>
+    <p class="text-sm text-gray-300 leading-relaxed">
+      Ici tu mets ton contenu « About » : présentation du projet, crédits, etc.
+    </p>
+  </AboutPopover>
+
   <div class="flex flex-col h-screen w-full bg-black text-gray-100">
     <header
       class="fixed top-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800"
@@ -313,10 +326,6 @@ function handleLocationSelected(location) {
               </div>
             </div>
 
-            <a href="/about" class="text-gray-400 hover:text-white transition-colors text-sm font-medium"
-              >About</a
-            >
-
             <button
               v-if="!isAuthenticated"
               @click="openLogin"
@@ -339,6 +348,16 @@ function handleLocationSelected(location) {
             >
               Disconnect
             </button>
+
+            <button
+              v-else
+              @click="logout"
+              class="text-gray-400 hover:text-white transition-colors text-sm font-medium"
+            >
+              Logout
+            </button>
+
+            <button @click="showAboutPopover = true" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">About</button>
           </div>
 
           <button
@@ -405,11 +424,12 @@ function handleLocationSelected(location) {
             class="block px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 text-sm rounded"
             >Favorites</a
           >
-          <a
-            href="/about"
-            class="block px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 text-sm rounded"
-            >About</a
+          <button
+            @click="openAbout"
+            class="text-gray-400 hover:text-white transition-colors text-sm font-medium"
           >
+            About
+          </button>
         </div>
       </nav>
     </header>

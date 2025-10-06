@@ -41,7 +41,7 @@ async def analyse_day(
     lon: float = Query(..., description="Longitude du point d'intérêt"),
     day: int = Query(..., ge=1, le=31, description="Jour du mois (1-31)"),
     month: int = Query(..., ge=1, le=12, description="Mois (1-12)"),
-    years: int = Query(20, ge=1, le=50, description="Nombre d'années d'historique à analyser"),
+    years: int = Query(0, ge=1, le=50, description="Nombre d'années d'historique à analyser"),
 ):
     """
     Analyse climatique simplifiée pour un jour/mois donné sur N années en arrière

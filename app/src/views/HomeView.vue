@@ -313,10 +313,7 @@ function handleLocationSelected(location) {
               </div>
             </div>
 
-            <a href="#" class="text-gray-400 hover:text-white transition-colors text-sm font-medium"
-              >Data</a
-            >
-            <a href="#" class="text-gray-400 hover:text-white transition-colors text-sm font-medium"
+            <a href="/about" class="text-gray-400 hover:text-white transition-colors text-sm font-medium"
               >About</a
             >
 
@@ -409,12 +406,7 @@ function handleLocationSelected(location) {
             >Favorites</a
           >
           <a
-            href="#"
-            class="block px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 text-sm rounded"
-            >Data</a
-          >
-          <a
-            href="#"
+            href="/about"
             class="block px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 text-sm rounded"
             >About</a
           >

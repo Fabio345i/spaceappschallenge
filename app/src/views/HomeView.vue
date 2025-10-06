@@ -9,6 +9,8 @@ import TutorialDriver from '@/components/tutorial/TutorialDriver.vue'
 import LoginPopover from '@/components/LoginPopover.vue'
 import RegisterPopover from '@/components/RegisterPopover.vue'
 import Confidence from '@/components/Confidence.vue'
+const tutorialOpen = ref(true)
+
 import AboutPopover from '@/components/AboutPopover.vue'
 
 const showAboutPopover = ref(false)
@@ -236,7 +238,7 @@ function handleLocationSelected(location) {
 </script>
 
 <template>
-  <TutorialDriver ref="tutorial" />
+  <TutorialDriver ref="tutorial" v-if="tutorialOpen" @close="tutorialOpen = false" />
 
   <!-- Popovers Login/Register -->
   <LoginPopover

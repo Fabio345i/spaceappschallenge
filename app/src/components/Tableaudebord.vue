@@ -47,7 +47,9 @@
         <p class="text-sm text-gray-300 mt-1">{{ activitySuggestion.activity }}</p>
 
         <div class="mt-3 bg-gray-900/60 rounded-lg border border-gray-800 p-3">
-          <h4 class="text-xs uppercase text-gray-400 font-semibold mb-2">Recommended Preparations</h4>
+          <h4 class="text-xs uppercase text-gray-400 font-semibold mb-2">
+            Recommended Preparations
+          </h4>
           <ul class="list-disc list-inside text-xs text-gray-400 text-left space-y-1">
             <li v-for="(item, i) in activitySuggestion.preparations" :key="i">{{ item }}</li>
           </ul>
@@ -64,17 +66,25 @@
       </div>
 
       <div class="flex gap-2 mt-6">
-        <button @click="generatePDF"
-          class="relative flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-gray-100 border hover:bg-gray-700 border border-gray-700 rounded-lg text-gray-300 hover:text-white text-sm font-medium transition-colors duration-200">
+        <button
+          @click="generatePDF"
+          class="relative flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-gray-100 border hover:bg-gray-700 border border-gray-700 rounded-lg text-gray-300 hover:text-white text-sm font-medium transition-colors duration-200"
+        >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+            />
           </svg>
           Download Report
         </button>
 
-        <button @click="resetView"
-          class="py-2 px-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg text-gray-300 hover:text-white text-sm font-medium transition-colors duration-200">
+        <button
+          @click="resetView"
+          class="py-2 px-3 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg text-gray-300 hover:text-white text-sm font-medium transition-colors duration-200"
+        >
           Reset View
         </button>
       </div>
@@ -106,7 +116,7 @@ const pressure = ref('0')
 const rain = ref('0')
 
 const displayName = computed(
-  () => props.location?.geojson?.properties?.display_name || 'Selected Location'
+  () => props.location?.geojson?.properties?.display_name || 'Selected Location',
 )
 
 const weatherData = computed(() => [
@@ -118,17 +128,28 @@ const weatherData = computed(() => [
   // { name: 'Precipitation', value: `${rain.value} mm` },
 ])
 
-watch(() => [props.location, props.selectedDate], ([loc, date]) => {
-  if (loc?.lat && loc?.lon) {
-    hasLocation.value = true
-    fetchWeather(loc, date)
-  } else {
-    hasLocation.value = false
-    loading.value = false
-    dataLoaded.value = true
-    temperature.value = tMin.value = tMax.value = humidity.value = wind.value = pressure.value = rain.value = "0"
-  }
-}, { deep: true })
+watch(
+  () => [props.location, props.selectedDate],
+  ([loc, date]) => {
+    if (loc?.lat && loc?.lon) {
+      hasLocation.value = true
+      fetchWeather(loc, date)
+    } else {
+      hasLocation.value = false
+      loading.value = false
+      dataLoaded.value = true
+      temperature.value =
+        tMin.value =
+        tMax.value =
+        humidity.value =
+        wind.value =
+        pressure.value =
+        rain.value =
+          '0'
+    }
+  },
+  { deep: true },
+)
 
 function isPastOrTodayUTC(date) {
   const today = new Date()
@@ -143,51 +164,66 @@ async function fetchWeather(loc, date) {
 
   const d = new Date(date)
   const y = d.getUTCFullYear()
-  const m = String(d.getUTCMonth() + 1).padStart(2, "0")
-  const day = String(d.getUTCDate()).padStart(2, "0")
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(d.getUTCDate()).padStart(2, '0')
   const dateStr = `${y}${m}${day}`
 
   try {
     if (isPastOrTodayUTC(d)) {
-      const { data: a } = await axios.get("http://127.0.0.1:8000/algo/daily/analyse", {
-        params: { lat: loc.lat, lon: loc.lon, day, month: m, years: 20 }
+      const { data } = await axios.get('https://spaceappschallenge-r59t.onrender.com/merra2/power/daily', {
+        params: { lat: loc.lat, lon: loc.lon, start: dateStr, end: dateStr },
       })
-      temperature.value = a.T_moyenne?.toFixed(1) ?? "0"
-      tMin.value        = a.Tmin_moyenne?.toFixed(1) ?? "0"
-      tMax.value        = a.Tmax_moyenne?.toFixed(1) ?? "0"
-      humidity.value    = a.humidite_moyenne?.toFixed(0) ?? "0"
-      wind.value        = a.vent_moyen_m_s?.toFixed(1) ?? "0"
-      pressure.value    = a.pression_moy_kPa?.toFixed(1) ?? "0"
-      try {
-        const { data: r } = await axios.get("http://127.0.0.1:8000/weather/rainfall", {
-          params: { lat: loc.lat, lon: loc.lon, start: dateStr, end: dateStr }
-        })
-        const obj = r?.data || {}
-        rain.value = obj[dateStr] != null ? Number(obj[dateStr]).toFixed(1) : "0"
-      } catch { rain.value = "0" }
+
+      const p = data.parameters
+      temperature.value = Object.values(p.T2M || {})[0]?.toFixed(1) ?? '0'
+      tMin.value = Object.values(p.T2M_MIN || {})[0]?.toFixed(1) ?? '0'
+      tMax.value = Object.values(p.T2M_MAX || {})[0]?.toFixed(1) ?? '0'
+      humidity.value = Object.values(p.RH2M || {})[0]?.toFixed(0) ?? '0'
+      const u = Object.values(p.U2M || {})[0]
+      const v = Object.values(p.V2M || {})[0]
+      wind.value = (u != null && v != null ? Math.sqrt(u * u + v * v) : 0).toFixed(1)
+      pressure.value = Object.values(p.PS || {})[0]?.toFixed(1) ?? '0'
+      rain.value = Object.values(p.PRECTOTCORR || {})[0]?.toFixed(1) ?? '0'
       dataLoaded.value = true
     } else {
-      const { data: p } = await axios.get("http://127.0.0.1:8000/algo/daily/predict", {
-        params: { lat: loc.lat, lon: loc.lon, day, month: m, base_years: 20, future_year: y, window_days: 3 }
+      const { data: p } = await axios.get('https://spaceappschallenge-r59t.onrender.com/algo/daily/predict', {
+        params: {
+          lat: loc.lat,
+          lon: loc.lon,
+          day,
+          month: m,
+          base_years: 10,
+          future_year: y,
+          window_days: 3,
+        },
       })
-      const safe = v => (v != null && !Number.isNaN(Number(v))) ? Number(v) : null
-      temperature.value = safe(p.T_moyenne)?.toFixed(1) ?? "0"
-      tMin.value        = safe(p.Tmin_ajustee ?? p.Tmin_base)?.toFixed(1) ?? "0"
-      tMax.value        = safe(p.Tmax_ajustee ?? p.Tmax_base)?.toFixed(1) ?? "0"
-      humidity.value    = safe(p.humidite_moyenne)?.toFixed(0) ?? "0"
-      wind.value        = safe(p.vent_moyen_m_s)?.toFixed(1) ?? "0"
-      pressure.value    = safe(p.pression_moy_kPa)?.toFixed(1) ?? "0"
+      const safe = (v) => (v != null && !Number.isNaN(Number(v)) ? Number(v) : null)
+      temperature.value = safe(p.T_moyenne)?.toFixed(1) ?? '0'
+      tMin.value = safe(p.Tmin_ajustee ?? p.Tmin_base)?.toFixed(1) ?? '0'
+      tMax.value = safe(p.Tmax_ajustee ?? p.Tmax_base)?.toFixed(1) ?? '0'
+      humidity.value = safe(p.humidite_moyenne)?.toFixed(0) ?? '0'
+      wind.value = safe(p.vent_moyen_m_s)?.toFixed(1) ?? '0'
+      pressure.value = safe(p.pression_moy_kPa)?.toFixed(1) ?? '0'
       try {
-        const { data: r } = await axios.get("http://127.0.0.1:8000/weather/rainfall", {
-          params: { lat: loc.lat, lon: loc.lon, start: dateStr, end: dateStr }
+        const { data: r } = await axios.get('https://spaceappschallenge-r59t.onrender.com/weather/rainfall', {
+          params: { lat: loc.lat, lon: loc.lon, start: dateStr, end: dateStr },
         })
         const obj = r?.data || {}
-        rain.value = obj[dateStr] != null ? Number(obj[dateStr]).toFixed(1) : "0"
-      } catch { rain.value = "0" }
+        rain.value = obj[dateStr] != null ? Number(obj[dateStr]).toFixed(1) : '0'
+      } catch {
+        rain.value = '0'
+      }
       dataLoaded.value = true
     }
   } catch {
-    temperature.value = tMin.value = tMax.value = humidity.value = wind.value = pressure.value = rain.value = "0"
+    temperature.value =
+      tMin.value =
+      tMax.value =
+      humidity.value =
+      wind.value =
+      pressure.value =
+      rain.value =
+        '0'
     dataLoaded.value = false
   } finally {
     loading.value = false
@@ -199,19 +235,19 @@ const weatherSummary = computed(() => {
   const h = Number(humidity.value)
   const w = Number(wind.value)
   const r = Number(rain.value)
-  if (isNaN(t) || isNaN(h) || isNaN(w)) return "Analysis in progress..."
+  if (isNaN(t) || isNaN(h) || isNaN(w)) return 'Analysis in progress...'
 
-  let summary = ""
-  if (t < 0) summary += "Severe cold"
-  else if (t < 10) summary += "Cold weather"
-  else if (t < 20) summary += "Cool"
-  else if (t < 28) summary += "Pleasant"
-  else summary += "Hot"
+  let summary = ''
+  if (t < 0) summary += 'Severe cold'
+  else if (t < 10) summary += 'Cold weather'
+  else if (t < 20) summary += 'Cool'
+  else if (t < 28) summary += 'Pleasant'
+  else summary += 'Hot'
 
-  if (r > 5) summary += ", possible rain"
-  if (h > 80) summary += ", high humidity"
-  if (w > 10) summary += ", windy"
-  return summary + "."
+  if (r > 5) summary += ', possible rain'
+  if (h > 80) summary += ', high humidity'
+  if (w > 10) summary += ', windy'
+  return summary + '.'
 })
 
 const activitySuggestion = computed(() => {
@@ -219,25 +255,54 @@ const activitySuggestion = computed(() => {
   const r = Number(rain.value)
   const w = Number(wind.value)
 
-  if (r > 5) return {title:"Rainy day",activity:"Perfect to stay warm — movie, reading or relaxing.",tips:"Bring an umbrella",preparations:["Umbrella","Waterproof shoes","Hot drink","Avoid long trips"]}
-  if (t <= 0) return {title:"Cold weather",activity:"Skiing, skating, or cozy evening at home.",tips:"Dress warmly",preparations:["Gloves","Warm clothes","Watch for icy roads"]}
-  if (t > 25 && r < 2) return {title:"Beautiful day",activity:"Perfect for outdoor activities or BBQ.",tips:"Use sunscreen",preparations:["Sunscreen","Water bottle","Sunglasses","Light clothes"]}
-  if (w > 25) return {title:"Strong wind",activity:"Better to do indoor activities.",tips:"Avoid cycling trips",preparations:["Windbreaker jacket","Secure outdoor objects","Avoid mountain trips"]}
-  return {title:"Mild weather",activity:"Great for walking or city exploring.",tips:"Enjoy fresh air",preparations:["Light jacket","Comfortable shoes","Plan a chill outing"]}
+  if (r > 5)
+    return {
+      title: 'Rainy day',
+      activity: 'Perfect to stay warm — movie, reading or relaxing.',
+      tips: 'Bring an umbrella',
+      preparations: ['Umbrella', 'Waterproof shoes', 'Hot drink', 'Avoid long trips'],
+    }
+  if (t <= 0)
+    return {
+      title: 'Cold weather',
+      activity: 'Skiing, skating, or cozy evening at home.',
+      tips: 'Dress warmly',
+      preparations: ['Gloves', 'Warm clothes', 'Watch for icy roads'],
+    }
+  if (t > 25 && r < 2)
+    return {
+      title: 'Beautiful day',
+      activity: 'Perfect for outdoor activities or BBQ.',
+      tips: 'Use sunscreen',
+      preparations: ['Sunscreen', 'Water bottle', 'Sunglasses', 'Light clothes'],
+    }
+  if (w > 25)
+    return {
+      title: 'Strong wind',
+      activity: 'Better to do indoor activities.',
+      tips: 'Avoid cycling trips',
+      preparations: ['Windbreaker jacket', 'Secure outdoor objects', 'Avoid mountain trips'],
+    }
+  return {
+    title: 'Mild weather',
+    activity: 'Great for walking or city exploring.',
+    tips: 'Enjoy fresh air',
+    preparations: ['Light jacket', 'Comfortable shoes', 'Plan a chill outing'],
+  }
 })
 
 function generatePDF() {
   const doc = new jsPDF()
   const d = new Date(props.selectedDate)
 
-  const primary = [243, 244, 246]        
-  const accent = [156, 163, 175]         
-  const background = [0, 0, 0]           
-  const backgroundSecondary = [17, 24, 39] 
-  const border = [31, 41, 55]            
-  const borderLight = [55, 65, 81]       
-  const textGray = [209, 213, 219]       
-  const textSubtle = [156, 163, 175]     
+  const primary = [243, 244, 246]
+  const accent = [156, 163, 175]
+  const background = [0, 0, 0]
+  const backgroundSecondary = [17, 24, 39]
+  const border = [31, 41, 55]
+  const borderLight = [55, 65, 81]
+  const textGray = [209, 213, 219]
+  const textSubtle = [156, 163, 175]
 
   doc.setFillColor(...background)
   doc.rect(0, 0, 210, 297, 'F')
@@ -245,7 +310,7 @@ function generatePDF() {
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(22)
   doc.setTextColor(...primary)
-  doc.text("NASA Weather Report", 20, 22)
+  doc.text('NASA Weather Report', 20, 22)
 
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(10)
@@ -253,7 +318,7 @@ function generatePDF() {
   doc.text(
     `Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`,
     20,
-    29
+    29,
   )
 
   doc.setDrawColor(...border)
@@ -264,7 +329,7 @@ function generatePDF() {
   doc.setTextColor(...textGray)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(13)
-  doc.text("General Information", 20, y)
+  doc.text('General Information', 20, y)
 
   y += 3
   doc.setDrawColor(...borderLight)
@@ -286,7 +351,7 @@ function generatePDF() {
   doc.text(
     `${d.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}`,
     60,
-    y
+    y,
   )
 
   y += 10
@@ -297,7 +362,7 @@ function generatePDF() {
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(...textGray)
   doc.setFontSize(13)
-  doc.text("Weather Summary", 20, y)
+  doc.text('Weather Summary', 20, y)
 
   y += 3
   doc.setDrawColor(...borderLight)
@@ -313,17 +378,17 @@ function generatePDF() {
 
   y += 20
   const weatherData = [
-    ["Average Temp", `${temperature.value} °C`],
-    ["Min / Max", `${tMin.value} °C / ${tMax.value} °C`],
-    ["Humidity", `${humidity.value} %`],
-    ["Wind Speed", `${wind.value} m/s`],
-    ["Pressure", `${pressure.value} kPa`],
-    ["Precipitation", `${rain.value} mm`],
+    ['Average Temp', `${temperature.value} °C`],
+    ['Min / Max', `${tMin.value} °C / ${tMax.value} °C`],
+    ['Humidity', `${humidity.value} %`],
+    ['Wind Speed', `${wind.value} m/s`],
+    ['Pressure', `${pressure.value} kPa`],
+    ['Precipitation', `${rain.value} mm`],
   ]
 
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(...textGray)
-  doc.text("Key Weather Data", 20, y)
+  doc.text('Key Weather Data', 20, y)
   y += 5
 
   doc.setDrawColor(...border)
@@ -343,7 +408,7 @@ function generatePDF() {
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(13)
   doc.setTextColor(...textGray)
-  doc.text("Suggested Activity", 20, y)
+  doc.text('Suggested Activity', 20, y)
 
   y += 3
   doc.setDrawColor(...borderLight)
@@ -371,7 +436,7 @@ function generatePDF() {
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(...textGray)
   doc.setFontSize(11)
-  doc.text("Preparations Checklist:", 20, y)
+  doc.text('Preparations Checklist:', 20, y)
 
   y += 6
   doc.setFont('helvetica', 'normal')
@@ -389,10 +454,10 @@ function generatePDF() {
 
   doc.setTextColor(...textSubtle)
   doc.setFontSize(8)
-  doc.text("Data: NASA POWER, NLDAS2, Open-Meteo", 20, y)
-  doc.text("© 2025 SpaceApps – made by Les GOLMONS :)", 190, y, { align: "right" })
+  doc.text('Data: NASA POWER, NLDAS2, Open-Meteo', 20, y)
+  doc.text('© 2025 SpaceApps – made by Les GOLMONS :)', 190, y, { align: 'right' })
 
-  const filename = `weather_report_${d.toISOString().split("T")[0]}_${displayName.value.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`
+  const filename = `weather_report_${d.toISOString().split('T')[0]}_${displayName.value.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`
   doc.save(filename)
 }
 

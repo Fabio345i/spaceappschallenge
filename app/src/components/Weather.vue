@@ -123,7 +123,7 @@ const fetchRainData = async () => {
 
   try {
     const res = await axios.get(
-      `http://127.0.0.1:8000/weather/rainfall?start_date=${startDate.value}&end_date=${endDate.value}&latitude=${latitude.value}&longitude=${longitude.value}`
+      `https://spaceappschallenge-r59t.onrender.com/weather/rainfall?start_date=${startDate.value}&end_date=${endDate.value}&latitude=${latitude.value}&longitude=${longitude.value}`
     )
     const today = new Date()
     const end = new Date(endDate.value)

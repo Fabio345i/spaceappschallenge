@@ -1,20 +1,6 @@
 version: "3.9"
 
 services:
-  api:
-    image: fabio345i/backend:latest
-    container_name: backend
-    ports:
-      - "8000:8000"
-    environment:
-      - EARTHDATA_USER="spacegolmons"
-      - EARTHDATA_PASS=" j^MHz3x)4.ttBkY"
-      - MONGO_URI=mongodb+srv://nasa_spaceapps:spacegolmons@cegep.owqvt.mongodb.net/?retryWrites=true&w=majority&appName=cegep
-      - MONGO_DB_NAME=nasa_db
-      - SECRET_KEY=05c63865123d1067592bdc70b0b5ccd9b52a5c3274e25a1494af141ef56e5a40
-      - ALGORITHM=HS256
-    restart: always
-
   app:
     image: fabio345i/frontend:latest
     container_name: frontend

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import SearchBar from '@/components/SearchBar.vue'
 import GlobeCesium from '@/components/GlobeCesium.vue'
 import Tableaudebord from '@/components/Tableaudebord.vue'
@@ -49,6 +49,7 @@ const resetTrigger = ref(0)
 const isAuthenticated = ref(!!localStorage.getItem('token'))
 const favorites = ref([])
 const favoriteAdded = ref(false)
+const logoutLoading = ref(false)
 
 // Popovers states
 const showLoginPopover = ref(false)
@@ -164,11 +165,33 @@ function selectFavorite(fav) {
 }
 
 function logout() {
-  localStorage.removeItem('token')
-  isAuthenticated.value = false
-  favorites.value = []
-  router.push('/')
+  logoutLoading.value = true
+  setTimeout(() => {
+    localStorage.removeItem('token')
+    isAuthenticated.value = false
+    favorites.value = []
+    favoritesOpen.value = false
+    logoutLoading.value = false
+    router.push('/')
+  }, 300)
 }
+
+function handleClickOutside(event) {
+  const favoritesButton = event.target.closest('[data-favorites-button]')
+  const favoritesDropdown = event.target.closest('[data-favorites-dropdown]')
+  if (!favoritesButton && !favoritesDropdown) {
+    favoritesOpen.value = false
+  }
+}
+
+onMounted(() => {
+  fetchCatastrophesNaturelles()
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 
 const selectedDate = ref(new Date())
 
@@ -264,36 +287,37 @@ function handleLocationSelected(location) {
 
   <div class="flex flex-col h-screen w-full bg-black text-gray-100">
     <header
-      class="fixed top-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800"
+      class="fixed top-0 left-0 right-0 z-50 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 transition-all duration-300"
     >
       <nav class="max-w-full px-8">
         <div class="flex items-center justify-between h-16">
           <div class="flex items-center space-x-4">
-            <div>
+            <div class="transition-all duration-200 hover:opacity-90">
               <h1 class="text-lg font-semibold text-white">NASA Weather</h1>
               <p class="text-xs text-gray-500">Earth Observation System</p>
             </div>
           </div>
 
           <div class="hidden md:flex items-center space-x-8">
-            <a href="#" class="text-gray-400 hover:text-white transition-colors text-sm font-medium"
+            <a href="#" class="text-gray-400 hover:text-white transition-all duration-200 text-sm font-medium px-3 py-1.5 rounded-md hover:bg-gray-800"
               >Home</a
             >
             <button
               @click="tutorial?.startTutorial()"
-              class="text-gray-400 hover:text-white transition-colors text-sm font-medium"
+              class="text-gray-400 hover:text-white transition-all duration-200 text-sm font-medium px-3 py-1.5 rounded-md hover:bg-gray-800"
             >
               Tutorial
             </button>
 
             <div class="relative">
               <button
+                data-favorites-button
                 @click="toggleFavorites"
-                class="text-gray-400 hover:text-white transition-colors flex items-center space-x-2 text-sm font-medium"
+                class="text-gray-400 hover:text-white transition-all duration-200 flex items-center space-x-2 text-sm font-medium px-3 py-1.5 rounded-md hover:bg-gray-800"
               >
                 <span>Favorites</span>
                 <svg
-                  class="w-4 h-4 transition-transform"
+                  class="w-4 h-4 transition-transform duration-200"
                   :class="{ 'rotate-180': favoritesOpen }"
                   fill="none"
                   stroke="currentColor"
@@ -308,63 +332,73 @@ function handleLocationSelected(location) {
                 </svg>
               </button>
 
-              <div
-                v-if="favoritesOpen"
-                class="absolute top-full mt-3 right-0 w-64 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden"
+              <transition
+                enter-active-class="transition ease-out duration-200"
+                enter-from-class="opacity-0 translate-y-1"
+                enter-to-class="opacity-100 translate-y-0"
+                leave-active-class="transition ease-in duration-150"
+                leave-from-class="opacity-100 translate-y-0"
+                leave-to-class="opacity-0 translate-y-1"
               >
-                <div class="p-2">
-                  <div
-                    v-for="fav in favorites"
-                    :key="fav.name"
-                    @click="selectFavorite(fav)"
-                    class="px-4 py-3 hover:bg-gray-700 cursor-pointer transition-colors rounded"
-                  >
-                    <div class="text-white text-sm font-medium">{{ fav.name }}</div>
-                    <div class="text-gray-500 text-xs mt-0.5">
-                      {{ fav.lat.toFixed(2) }}° / {{ fav.lon.toFixed(2) }}°
+                <div
+                  data-favorites-dropdown
+                  v-if="favoritesOpen"
+                  class="absolute top-full mt-2 right-0 w-64 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden z-50"
+                >
+                  <div class="p-2 max-h-64 overflow-y-auto">
+                    <div
+                      v-if="favorites.length === 0"
+                      class="px-4 py-3 text-gray-500 text-sm text-center"
+                    >
+                      No favorites yet
+                    </div>
+                    <div
+                      v-for="fav in favorites"
+                      :key="fav.name"
+                      @click="selectFavorite(fav)"
+                      class="px-4 py-3 hover:bg-gray-700 cursor-pointer transition-all duration-150 rounded active:bg-gray-600"
+                    >
+                      <div class="text-white text-sm font-medium">{{ fav.name }}</div>
+                      <div class="text-gray-500 text-xs mt-0.5">
+                        {{ fav.lat.toFixed(2) }}° / {{ fav.lon.toFixed(2) }}°
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              </transition>
             </div>
 
             <button
               v-if="!isAuthenticated"
               @click="openLogin"
-              class="text-gray-400 hover:text-white transition-colors text-sm font-medium"
+              class="text-gray-400 hover:text-white transition-all duration-200 text-sm font-medium px-3 py-1.5 rounded-md hover:bg-gray-800"
             >
               Login
             </button>
             <button
               v-else
               @click="logout"
-              class="text-gray-400 hover:text-white transition-colors text-sm font-medium"
+              :disabled="logoutLoading"
+              class="text-gray-400 hover:text-white transition-all duration-200 text-sm font-medium px-3 py-1.5 rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
-              Logout
+              <svg v-if="logoutLoading" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              {{ logoutLoading ? 'Logging out...' : 'Logout' }}
             </button>
 
-            <button
-              v-if="isAuthenticated"
-              @click="logout"
-              class="text-gray-400 hover:text-white transition-colors text-sm font-medium"
+            <button 
+              @click="showAboutPopover = true" 
+              class="text-gray-400 hover:text-white transition-all duration-200 text-sm font-medium px-3 py-1.5 rounded-md hover:bg-gray-800"
             >
-              Disconnect
+              About
             </button>
-
-            <button
-              v-else
-              @click="logout"
-              class="text-gray-400 hover:text-white transition-colors text-sm font-medium"
-            >
-              Logout
-            </button>
-
-            <button @click="showAboutPopover = true" class="text-gray-400 hover:text-white transition-colors text-sm font-medium">About</button>
           </div>
 
           <button
             @click="mobileMenuOpen = !mobileMenuOpen"
-            class="md:hidden text-gray-400 hover:text-white"
+            class="md:hidden text-gray-400 hover:text-white transition-all duration-200 p-2 rounded-md hover:bg-gray-800"
           >
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -385,59 +419,59 @@ function handleLocationSelected(location) {
           </button>
         </div>
 
-        <div v-if="mobileMenuOpen" class="md:hidden border-t border-gray-800 py-3">
-          <a
-            href="#"
-            class="block px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 text-sm rounded"
-            >Home</a
-          >
-          <button
-            @click="toggleFavorites"
-            class="block w-full text-left px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 text-sm rounded"
-          >
-            Favorites
-          </button>
-          <a
-            href="#"
-            class="block px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 text-sm rounded"
-            >Data</a
-          >
-          <button
-            v-if="!isAuthenticated"
-            @click="openLogin"
-            class="block w-full text-left px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 text-sm rounded"
-          >
-            Login
-          </button>
-          <button
-            v-else
-            @click="logout"
-            class="block w-full text-left px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 text-sm rounded"
-          >
-            Disconnect
-          </button>
-          <a
-            href="#"
-            class="block px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 text-sm rounded"
-            >Home</a
-          >
-          <a
-            href="#"
-            class="block px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-800 text-sm rounded"
-            >Favorites</a
-          >
-          <button
-            @click="openAbout"
-            class="text-gray-400 hover:text-white transition-colors text-sm font-medium"
-          >
-            About
-          </button>
-        </div>
+        <transition
+          enter-active-class="transition ease-out duration-200"
+          enter-from-class="opacity-0 -translate-y-2"
+          enter-to-class="opacity-100 translate-y-0"
+          leave-active-class="transition ease-in duration-150"
+          leave-from-class="opacity-100 translate-y-0"
+          leave-to-class="opacity-0 -translate-y-2"
+        >
+          <div v-if="mobileMenuOpen" class="md:hidden border-t border-gray-800 py-3 space-y-1">
+            <a
+              href="#"
+              class="block px-4 py-2.5 text-gray-400 hover:text-white hover:bg-gray-800 text-sm rounded-md transition-all duration-200"
+              >Home</a
+            >
+            <button
+              @click="tutorial?.startTutorial(); mobileMenuOpen = false"
+              class="block w-full text-left px-4 py-2.5 text-gray-400 hover:text-white hover:bg-gray-800 text-sm rounded-md transition-all duration-200"
+            >
+              Tutorial
+            </button>
+            <button
+              @click="toggleFavorites; mobileMenuOpen = false"
+              class="block w-full text-left px-4 py-2.5 text-gray-400 hover:text-white hover:bg-gray-800 text-sm rounded-md transition-all duration-200"
+            >
+              Favorites
+            </button>
+            <button
+              v-if="!isAuthenticated"
+              @click="openLogin(); mobileMenuOpen = false"
+              class="block w-full text-left px-4 py-2.5 text-gray-400 hover:text-white hover:bg-gray-800 text-sm rounded-md transition-all duration-200"
+            >
+              Login
+            </button>
+            <button
+              v-else
+              @click="logout(); mobileMenuOpen = false"
+              class="block w-full text-left px-4 py-2.5 text-gray-400 hover:text-white hover:bg-gray-800 text-sm rounded-md transition-all duration-200"
+            >
+              Logout
+            </button>
+            <button
+              @click="showAboutPopover = true; mobileMenuOpen = false"
+              class="block w-full text-left px-4 py-2.5 text-gray-400 hover:text-white hover:bg-gray-800 text-sm rounded-md transition-all duration-200"
+            >
+              About
+            </button>
+          </div>
+        </transition>
       </nav>
     </header>
 
     <div
-      class="fixed top-16 left-0 right-0 z-40 bg-yellow-600 text-black overflow-hidden border-b-2 border-yellow-600"
+      class="fixed top-16 left-0 right-0 z-40 bg-yellow-600 text-black overflow-hidden border-b-2 border-yellow-600 transition-all duration-300"
     >
       <div class="h-10 flex items-center">
         <div v-if="headlinesLoading" class="px-4 text-sm font-medium">
@@ -467,22 +501,25 @@ function handleLocationSelected(location) {
     </div>
 
     <main class="flex pt-16 overflow-hidden">
-      <aside class="w-96 flex-shrink-0 bg-gray-950 border-r border-gray-800 overflow-y-auto mt-10">
+      <aside class="w-96 shrink-0 bg-gray-950 border-r border-gray-800 overflow-y-auto mt-10 transition-all duration-300">
         <div class="p-6 space-y-6">
           <div>
-            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">
+            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3 transition-colors duration-200">
               Location Search
             </h2>
             <SearchBar @location-selected="handleLocationSelected" />
             <button
               v-if="isAuthenticated && target"
               @click="addFavorite(target)"
-              class="mt-2 w-full px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 hover:text-white text-sm font-medium rounded-lg transition-all duration-300 flex items-center justify-center gap-2"
+              class="mt-2 w-full px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 hover:text-white text-sm font-medium rounded-lg transition-all duration-300 flex items-center justify-center gap-2 active:scale-95"
+              :class="{
+                'bg-yellow-900/30 border-yellow-700/50 text-yellow-300': favoriteAdded || isCurrentLocationFavorite,
+              }"
             >
               <svg
-                class="w-4 h-4 transition-all duration-500"
+                class="w-4 h-4 transition-all duration-300"
                 :class="{
-                  'fill-yellow-400 stroke-yellow-400': favoriteAdded || isCurrentLocationFavorite,
+                  'fill-yellow-400 stroke-yellow-400 scale-110': favoriteAdded || isCurrentLocationFavorite,
                 }"
                 viewBox="0 0 24 24"
                 fill="none"
@@ -493,22 +530,15 @@ function handleLocationSelected(location) {
                   d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
                 ></path>
               </svg>
-              Add to Favorites
+              {{ favoriteAdded || isCurrentLocationFavorite ? 'Added to Favorites' : 'Add to Favorites' }}
             </button>
             <p class="text-xs text-gray-600 mt-2">
               Search for any city, region, or coordinates worldwide
             </p>
-            <button
-              v-if="isAuthenticated && target"
-              @click="addFavorite(target)"
-              class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-            >
-              + Favorite
-            </button>
           </div>
 
           <div>
-            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">
+            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3 transition-colors duration-200">
               Forecast Date
             </h2>
             <Calendar :selected-date="selectedDate" @date-selected="handleDateSelected" />
@@ -518,7 +548,7 @@ function handleLocationSelected(location) {
           </div>
 
           <div>
-            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">
+            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3 transition-colors duration-200">
               Weather Summary
             </h2>
             <Tableaudebord
@@ -607,7 +637,9 @@ function handleLocationSelected(location) {
 }
 
 .ticker-item:hover {
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: rgba(0, 0, 0, 0.15);
+  transform: scale(1.02);
+  transition: all 0.2s ease;
 }
 
 @keyframes scroll {

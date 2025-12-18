@@ -38,11 +38,17 @@
               </svg>
               <input
                 v-model="formData.username"
+                @blur="validateField('username')"
+                @input="touched.username && validateField('username')"
                 type="text"
                 placeholder="Enter username"
+                :class="{ 'border-red-500': touched.username && errors.username }"
                 required
               />
             </div>
+            <p v-if="touched.username && errors.username" class="text-red-400 text-xs mt-1.5 ml-1">
+              {{ errors.username }}
+            </p>
           </div>
 
           <div class="form-group">
@@ -54,8 +60,11 @@
               </svg>
               <input
                 v-model="formData.password"
+                @blur="validateField('password')"
+                @input="touched.password && validateField('password')"
                 :type="showPassword ? 'text' : 'password'"
                 placeholder="••••••••"
+                :class="{ 'border-red-500': touched.password && errors.password }"
                 required
               />
               <button 
@@ -73,10 +82,17 @@
                 </svg>
               </button>
             </div>
+            <p v-if="touched.password && errors.password" class="text-red-400 text-xs mt-1.5 ml-1">
+              {{ errors.password }}
+            </p>
           </div>
 
           <button type="submit" class="submit-btn" :disabled="loading">
-            {{ loading ? 'Loading...' : 'Login' }}
+            <svg v-if="loading" class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span v-else>Login</span>
             <svg v-if="!loading" class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="5" y1="12" x2="19" y2="12"></line>
               <polyline points="12 5 19 12 12 19"></polyline>
@@ -114,9 +130,17 @@ export default {
         username: '',
         password: ''
       },
+      errors: {
+        username: '',
+        password: ''
+      },
       message: {
         type: '',
         text: ''
+      },
+      touched: {
+        username: false,
+        password: false
       }
     }
   },
@@ -127,7 +151,29 @@ export default {
     switchToRegister() {
       this.$emit('switch-to-register')
     },
+    validateField(field) {
+      this.touched[field] = true
+      if (field === 'username') {
+        this.errors.username = this.formData.username.trim() === '' ? 'Username is required' : ''
+      } else if (field === 'password') {
+        this.errors.password = this.formData.password === '' ? 'Password is required' : ''
+      }
+    },
+    validateForm() {
+      let isValid = true
+      this.validateField('username')
+      this.validateField('password')
+      
+      if (this.errors.username || this.errors.password) {
+        isValid = false
+      }
+      return isValid
+    },
     async handleLogin() {
+      if (!this.validateForm()) {
+        return
+      }
+
       this.loading = true
       this.message = { type: '', text: '' }
 
@@ -141,18 +187,18 @@ export default {
         const data = await response.json()
 
         if (response.ok) {
-          this.message = { type: 'success', text: 'Login success' }
+          this.message = { type: 'success', text: 'Login successful! Redirecting...' }
           localStorage.setItem('token', data.access_token)
           
           setTimeout(() => {
             this.$emit('login-success')
             this.close()
-          }, 1000)
+          }, 1200)
         } else {
-          this.message = { type: 'error', text: data.detail || 'Invalid credentials' }
+          this.message = { type: 'error', text: data.detail || 'Invalid username or password. Please try again.' }
         }
       } catch (error) {
-        this.message = { type: 'error', text: 'Server error' }
+        this.message = { type: 'error', text: 'Connection error. Please check your internet connection and try again.' }
       } finally {
         this.loading = false
       }
@@ -258,6 +304,21 @@ h1 {
   background: #14532d;
   border-color: #166534;
   color: #86efac;
+  animation: successPulse 0.5s ease-out;
+}
+
+@keyframes successPulse {
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .message.error {
@@ -312,6 +373,16 @@ input::placeholder {
 input:focus {
   outline: none;
   border-color: #4b5563;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+input.border-red-500 {
+  border-color: #ef4444 !important;
+}
+
+input.border-red-500:focus {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
 }
 
 .toggle-password {
@@ -338,11 +409,11 @@ input:focus {
 
 .submit-btn {
   width: 100%;
-  background: #1f2937;
+  background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
   color: #fff;
   font-weight: 600;
-  font-size: 14px;
-  padding: 12px;
+  font-size: 15px;
+  padding: 14px;
   border: 1px solid #374151;
   border-radius: 8px;
   cursor: pointer;
@@ -351,16 +422,41 @@ input:focus {
   justify-content: center;
   gap: 8px;
   margin-top: 24px;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.submit-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s;
+}
+
+.submit-btn:hover:not(:disabled)::before {
+  left: 100%;
 }
 
 .submit-btn:hover:not(:disabled) {
-  background: #374151;
+  background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+  border-color: #4b5563;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.submit-btn:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .submit-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
 }
 
 .arrow-icon {
